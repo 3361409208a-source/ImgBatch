@@ -978,11 +978,27 @@ class ImgBatchApp:
             return
         self.ai_result.clear()
         self.ai_tree.delete(*self.ai_tree.get_children())
+        # Show loading placeholder in AI tree
+        self.ai_tree.insert('', tk.END, values=('正在连接 DeepSeek...', '⏳ 等待响应...'))
         file_names = [d['name'] for d in self.file_data]
         prompt = self.ai_prompt_text.get('1.0', tk.END).strip()
         self._animate_status('AI 分析中')
         self.root.after(0, self._start_spinner)
+        self.is_running = True
+        self._anim_ai_loading_id = self.root.after(0, self._anim_ai_loading)
         threading.Thread(target=self._ai_thread, args=(api_key, file_names, prompt), daemon=True).start()
+
+    def _anim_ai_loading(self):
+        """动画更新 AI 树中的加载提示"""
+        if not self.is_running:
+            return
+        items = self.ai_tree.get_children()
+        if items and not self.ai_result:
+            dots_list = ['⏳ 等待响应.', '⏳ 等待响应..', '⏳ 等待响应...',
+                         '⏳ 分析中.', '⏳ 分析中..', '⏳ 分析中...']
+            idx = int(time.time() * 1.5) % len(dots_list)
+            self.ai_tree.item(items[0], values=('正在连接 DeepSeek...', dots_list[idx]))
+            self._anim_ai_loading_id = self.root.after(400, self._anim_ai_loading)
 
     def _ai_thread(self, api_key, file_names, prompt):
         try:
@@ -1044,12 +1060,21 @@ class ImgBatchApp:
                     self.ai_result[fn] = fn
 
             self.root.after(0, self._ai_populate)
+            self.root.after(0, self._stop_ai_loading)
             self.root.after(0, self._stop_spinner)
             self._set_status(f'AI 分析完成，{len(self.ai_result)} 条建议')
+            self.is_running = False
         except Exception as e:
+            self.root.after(0, self._stop_ai_loading)
             self.root.after(0, self._stop_spinner)
             self._set_status(f'AI 错误: {e}')
             self.root.after(0, lambda: messagebox.showerror('AI 错误', str(e)))
+            self.is_running = False
+
+    def _stop_ai_loading(self):
+        if hasattr(self, '_anim_ai_loading_id') and self._anim_ai_loading_id:
+            self.root.after_cancel(self._anim_ai_loading_id)
+            self._anim_ai_loading_id = None
 
     def _sanitize_filename(self, name):
         """清理文件名中的非法字符"""
