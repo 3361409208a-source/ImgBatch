@@ -22,7 +22,7 @@ except ImportError:
     import tkMessageBox as messagebox
     filedialog = type('obj', (object,), {'askdirectory': askdirectory})()
 
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw, ImageFont, ImageTk
 
 SUPPORTED_EXT = {'.jpg', '.jpeg', '.png', '.webp', '.bmp', '.tiff', '.tif', '.gif', '.ico'}
 QUALITY_FORMATS = {'.jpg', '.jpeg', '.webp'}
@@ -155,6 +155,7 @@ class ImgBatchApp:
         self._tab_rename()
         self._tab_watermark()
         self._tab_ai_rename()
+        self._tab_single()
 
         # ── 状态栏 + 动画 ──
         st = ttk.Frame(self.root)
@@ -450,6 +451,200 @@ class ImgBatchApp:
         for child in frame.winfo_children():
             if isinstance(child, ttk.Entry):
                 child.config(show='' if child.cget('show') == '*' else '*')
+
+    # ═══════════════════════ Tab: Single ═══════════════════════
+
+    def _tab_single(self):
+        tab = ttk.Frame(self.notebook)
+        self.notebook.add(tab, text=' Single ')
+
+        f = ttk.Frame(tab)
+        f.pack(fill=tk.BOTH, expand=True, padx=10, pady=8)
+
+        # Left: Image preview
+        left = ttk.Frame(f)
+        left.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+
+        ttk.Label(left, text='Preview:', font=('Tahoma', 9, 'bold')).pack(anchor=tk.W)
+        self.single_canvas = tk.Canvas(left, width=300, height=280, bg='#FFFFFF',
+                                        relief=tk.SUNKEN, borderwidth=2)
+        self.single_canvas.pack(fill=tk.BOTH, expand=True, pady=4)
+        self.single_canvas.create_text(150, 140, text='No image loaded',
+                                       fill='#888888', font=('Tahoma', 10), tags='placeholder')
+
+        # Info line
+        self.single_info = ttk.Label(left, text='Size: - | Dimensions: - | Format: -')
+        self.single_info.pack(anchor=tk.W, pady=2)
+
+        # Right: Controls
+        right = ttk.Frame(f, width=280)
+        right.pack(side=tk.RIGHT, fill=tk.Y, padx=(10, 0))
+        right.pack_propagate(False)
+
+        # Load
+        r0 = ttk.Frame(right); r0.pack(fill=tk.X, pady=2)
+        ttk.Button(r0, text='Open Image...', command=self._single_open).pack(fill=tk.X)
+
+        ttk.Separator(right, orient=tk.HORIZONTAL).pack(fill=tk.X, pady=6)
+
+        # Quick Compress
+        ttk.Label(right, text='Quick Compress', font=('Tahoma', 9, 'bold')).pack(anchor=tk.W)
+        sf1 = ttk.Frame(right); sf1.pack(fill=tk.X, pady=2)
+        ttk.Label(sf1, text='Quality:').pack(side=tk.LEFT)
+        self.single_quality = tk.IntVar(value=75)
+        ttk.Scale(sf1, from_=1, to=100, variable=self.single_quality,
+                  command=lambda v: self._slider_label(v, self.sql)).pack(side=tk.LEFT, fill=tk.X, expand=True, padx=4)
+        self.sql = ttk.Label(sf1, text='75%', width=4); self.sql.pack(side=tk.LEFT)
+        ttk.Button(right, text='Compress & Save', command=self._single_compress).pack(fill=tk.X, pady=2)
+
+        ttk.Separator(right, orient=tk.HORIZONTAL).pack(fill=tk.X, pady=6)
+
+        # Quick Convert
+        ttk.Label(right, text='Convert Format', font=('Tahoma', 9, 'bold')).pack(anchor=tk.W)
+        sf2 = ttk.Frame(right); sf2.pack(fill=tk.X, pady=2)
+        self.single_fmt = tk.StringVar(value='.png')
+        for fmt in ['.jpg', '.png', '.webp', '.bmp', '.tiff']:
+            ttk.Radiobutton(sf2, text=fmt, variable=self.single_fmt, value=fmt).pack(side=tk.LEFT, padx=2)
+        ttk.Button(right, text='Convert & Save', command=self._single_convert).pack(fill=tk.X, pady=2)
+
+        ttk.Separator(right, orient=tk.HORIZONTAL).pack(fill=tk.X, pady=6)
+
+        # Quick Watermark
+        ttk.Label(right, text='Quick Watermark', font=('Tahoma', 9, 'bold')).pack(anchor=tk.W)
+        sf3 = ttk.Frame(right); sf3.pack(fill=tk.X, pady=2)
+        ttk.Label(sf3, text='Text:').pack(side=tk.LEFT)
+        self.single_wm = tk.StringVar(value='Watermark')
+        ttk.Entry(sf3, textvariable=self.single_wm, width=15).pack(side=tk.LEFT, fill=tk.X, expand=True, padx=4)
+        ttk.Button(right, text='Watermark & Save', command=self._single_watermark).pack(fill=tk.X, pady=2)
+
+        # Save As
+        ttk.Separator(right, orient=tk.HORIZONTAL).pack(fill=tk.X, pady=6)
+        ttk.Button(right, text='Save As...', command=self._single_saveas).pack(fill=tk.X, pady=2)
+
+        self.single_path = ''
+        self.single_img = None
+
+    def _single_open(self):
+        path = filedialog.askopenfilename(
+            title='Open Image',
+            filetypes=[('Images', '*.png *.jpg *.jpeg *.webp *.bmp *.tiff *.gif *.ico')])
+        if not path:
+            return
+        self.single_path = path
+        try:
+            self.single_img = Image.open(path)
+            # Show preview
+            preview = self._make_thumbnail(self.single_img, 280, 260)
+            self.single_tk_img = preview  # keep reference
+            self.single_canvas.delete('all')
+            cw = self.single_canvas.winfo_width() or 300
+            ch = self.single_canvas.winfo_height() or 280
+            x = max((cw - preview.width) // 2, 0)
+            y = max((ch - preview.height) // 2, 0)
+            self.single_canvas.create_image(x, y, anchor=tk.NW,
+                                             image=preview, tags='preview')
+            # Info
+            sz = self._fmt_size(os.path.getsize(path))
+            info = (f'Size: {sz} | Dimensions: '
+                    f'{self.single_img.width}x{self.single_img.height} | '
+                    f'Format: {self.single_img.format}')
+            self.single_info.config(text=info)
+        except Exception as e:
+            messagebox.showerror('Error', f'Failed to open image: {e}')
+
+    def _make_thumbnail(self, img, max_w, max_h):
+        w, h = img.size
+        scale = min(max_w / w, max_h / h, 1.0)
+        nw, nh = int(w * scale), int(h * scale)
+        thumb = img.copy()
+        thumb.thumbnail((nw, nh), Image.LANCZOS)
+        return ImageTk.PhotoImage(thumb)
+
+    def _single_compress(self):
+        if not self.single_img:
+            messagebox.showwarning('Notice', 'Open an image first')
+            return
+        path = self.single_path
+        quality = int(float(self.single_quality.get()))
+        out = path
+        try:
+            img = self.single_img.copy()
+            ext = os.path.splitext(out)[1].lower()
+            kw = {'optimize': True}
+            if ext in QUALITY_FORMATS:
+                kw['quality'] = quality
+            img.save(out, **kw)
+            before = self._fmt_size(os.path.getsize(path))
+            after = self._fmt_size(os.path.getsize(out))
+            messagebox.showinfo('Done', f'Compressed: {before} -> {after}')
+            self._single_open()
+        except Exception as e:
+            messagebox.showerror('Error', str(e))
+
+    def _single_convert(self):
+        if not self.single_img:
+            messagebox.showwarning('Notice', 'Open an image first')
+            return
+        target = self.single_fmt.get()
+        base = os.path.splitext(self.single_path)[0]
+        out = base + target
+        try:
+            img = self.single_img.copy()
+            if img.mode in ('RGBA', 'P', 'LA') and target in ('.jpg', '.jpeg'):
+                rgb = Image.new('RGB', img.size, (255, 255, 255))
+                if img.mode == 'P':
+                    img = img.convert('RGBA')
+                rgb.paste(img, mask=img.split()[-1] if img.mode == 'RGBA' else None)
+                img = rgb
+            img.save(out, optimize=True)
+            messagebox.showinfo('Done', f'Converted to {target}')
+        except Exception as e:
+            messagebox.showerror('Error', str(e))
+
+    def _single_watermark(self):
+        if not self.single_img:
+            messagebox.showwarning('Notice', 'Open an image first')
+            return
+        text = self.single_wm.get()
+        if not text:
+            return
+        try:
+            img = self.single_img.copy().convert('RGBA')
+            layer = Image.new('RGBA', img.size, (0, 0, 0, 0))
+            draw = ImageDraw.Draw(layer)
+            try:
+                font = ImageFont.truetype('tahoma.ttf', 24)
+            except Exception:
+                font = ImageFont.load_default()
+            bbox = draw.textbbox((0, 0), text, font=font)
+            tw, th = bbox[2] - bbox[0], bbox[3] - bbox[1]
+            x = img.width - tw - 15
+            y = img.height - th - 15
+            draw.text((x, y), text, fill=(255, 255, 255, 128), font=font)
+            result = Image.alpha_composite(img, layer)
+            result.save(self.single_path, optimize=True)
+            messagebox.showinfo('Done', 'Watermark added')
+            self._single_open()
+        except Exception as e:
+            messagebox.showerror('Error', str(e))
+
+    def _single_saveas(self):
+        if not self.single_img:
+            messagebox.showwarning('Notice', 'Open an image first')
+            return
+        path = filedialog.asksaveasfilename(
+            title='Save As',
+            defaultextension='.png',
+            filetypes=[('PNG', '*.png'), ('JPEG', '*.jpg'), ('WebP', '*.webp'),
+                       ('BMP', '*.bmp'), ('All', '*.*')])
+        if not path:
+            return
+        try:
+            self.single_img.save(path, optimize=True)
+            self.single_path = path
+            messagebox.showinfo('Done', f'Saved to:\n{path}')
+        except Exception as e:
+            messagebox.showerror('Error', str(e))
 
     # ═══════════════════════ 通用工具方法 ═══════════════════════
 

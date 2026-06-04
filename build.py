@@ -84,6 +84,7 @@ cmd = [
     '--hidden-import', 'PIL.Image',
     '--hidden-import', 'PIL.ImageDraw',
     '--hidden-import', 'PIL.ImageFont',
+    '--hidden-import', 'PIL.ImageTk',
     '--hidden-import', 'json',
     '--hidden-import', 'urllib.request',
     '--hidden-import', 'urllib.error',
