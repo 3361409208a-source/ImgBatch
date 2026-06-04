@@ -8,6 +8,7 @@ import shutil
 import threading
 import time
 import re
+import math
 from datetime import datetime
 from pathlib import Path
 
@@ -51,6 +52,18 @@ class ImgBatchApp:
         self.file_data = []
         self.is_running = False
         self.tree_items = {}
+
+        # ── 动画 Animation ──
+        self._anim_spinner_angle = 0
+        self._anim_spinner_id = None
+        self._anim_highlight_id = None
+        self._anim_highlight_item = None
+        self._anim_highlight_on = False
+        self._progress_target = 0
+        self._progress_current = 0
+        self._progress_anim_id = None
+        self._status_dots = 0
+        self._status_anim_id = None
 
         # ── 压缩 Compress ──
         self.c_quality = tk.IntVar(value=75)
@@ -142,13 +155,24 @@ class ImgBatchApp:
         self._tab_watermark()
         self._tab_ai_rename()
 
-        # ── 状态栏 ──
+        # ── 状态栏 + 动画 ──
         st = ttk.Frame(self.root)
         st.pack(fill=tk.X, padx=12, pady=(4, 8))
         self.progress = ttk.Progressbar(st, mode='determinate')
         self.progress.pack(fill=tk.X, pady=(0, 2))
+
+        # 动画区域：spinner + 状态 + 统计
         sf = ttk.Frame(st)
-        sf.pack(fill=tk.X)
+        sf.pack(fill=tk.X, pady=(2, 0))
+
+        # 旋转加载器 Spinner
+        self.spinner = tk.Canvas(sf, width=20, height=20, bg=BG, highlightthickness=0)
+        self.spinner.pack(side=tk.LEFT, padx=(0, 6))
+        self.spinner.create_oval(4, 4, 16, 16, outline=BG2, width=2, tags='bg')
+        self.spinner_arc = self.spinner.create_arc(4, 4, 16, 16, start=0, extent=60,
+                                                    outline=ACCENT, width=2, style='arc', tags='arc')
+        self.spinner.pack_forget()  # 默认隐藏
+
         self.lbl_status = ttk.Label(sf, text='就绪')
         self.lbl_status.pack(side=tk.LEFT)
         self.lbl_stats = ttk.Label(sf, text='')
@@ -583,14 +607,16 @@ class ImgBatchApp:
                          daemon=True).start()
 
     def _compress_thread(self, folder, file_list, quality, resize_pct, do_backup, replace, out):
-        self._set_status('正在压缩...')
+        self._animate_status('正在压缩')
+        self.root.after(0, self._start_spinner)
         self._set_progress(0)
         if do_backup:
-            self._set_status('正在备份...')
+            self._animate_status('正在备份')
             try:
                 self._do_backup(folder, file_list)
             except Exception as e:
                 self._set_status(f'备份失败: {e}')
+                self.root.after(0, self._stop_spinner)
                 self.is_running = False
                 return
         total_before = 0
@@ -600,6 +626,8 @@ class ImgBatchApp:
         if not replace:
             os.makedirs(out, exist_ok=True)
         for i, fname in enumerate(file_list):
+            if fname in self.tree_items:
+                self.root.after(0, lambda t=self.tree_items[fname]: self._highlight_item(t))
             src = os.path.join(folder, fname)
             sb = os.path.getsize(src)
             total_before += sb
@@ -630,7 +658,7 @@ class ImgBatchApp:
             except Exception as e:
                 errors.append(f'{fname}: {e}')
             self._set_progress((i + 1) / total * 100)
-            self._set_status(f'压缩中 {i+1}/{total}')
+            self._animate_status(f'压缩中 {i+1}/{total}')
             time.sleep(0.005)
         self._finish_op(total_before, total_after, errors, '压缩')
 
@@ -654,14 +682,16 @@ class ImgBatchApp:
                          daemon=True).start()
 
     def _convert_thread(self, folder, file_list, target_fmt, do_backup, replace, out):
-        self._set_status('正在转换格式...')
+        self._animate_status('正在转换格式')
+        self.root.after(0, self._start_spinner)
         self._set_progress(0)
         if do_backup:
-            self._set_status('正在备份...')
+            self._animate_status('正在备份')
             try:
                 self._do_backup(folder, file_list)
             except Exception as e:
                 self._set_status(f'备份失败: {e}')
+                self.root.after(0, self._stop_spinner)
                 self.is_running = False
                 return
         total_before = 0
@@ -671,6 +701,8 @@ class ImgBatchApp:
         if not replace:
             os.makedirs(out, exist_ok=True)
         for i, fname in enumerate(file_list):
+            if fname in self.tree_items:
+                self.root.after(0, lambda t=self.tree_items[fname]: self._highlight_item(t))
             src = os.path.join(folder, fname)
             sb = os.path.getsize(src)
             total_before += sb
@@ -693,7 +725,6 @@ class ImgBatchApp:
                 img.close()
                 sa = os.path.getsize(dst)
                 total_after += sa
-                # Remove old file if format changed and replacing
                 if replace and target_fmt != os.path.splitext(fname)[1].lower() and os.path.exists(src):
                     try:
                         os.remove(src)
@@ -703,7 +734,7 @@ class ImgBatchApp:
             except Exception as e:
                 errors.append(f'{fname}: {e}')
             self._set_progress((i + 1) / total * 100)
-            self._set_status(f'转换中 {i+1}/{total}')
+            self._animate_status(f'转换中 {i+1}/{total}')
             time.sleep(0.005)
         self._finish_op(total_before, total_after, errors, '转换', post_refresh=True)
 
@@ -772,18 +803,23 @@ class ImgBatchApp:
         threading.Thread(target=self._rename_thread, args=(folder, mapping), daemon=True).start()
 
     def _rename_thread(self, folder, mapping):
-        self._set_status('正在重命名...')
+        self._animate_status('正在重命名')
+        self.root.after(0, self._start_spinner)
         self._set_progress(0)
         total = len(mapping)
         errors = []
         for i, (old, new) in enumerate(mapping.items()):
+            if old in self.tree_items:
+                self.root.after(0, lambda t=self.tree_items[old]: self._highlight_item(t))
             try:
                 os.rename(os.path.join(folder, old), os.path.join(folder, new))
             except Exception as e:
                 errors.append(f'{old} → {new}: {e}')
             self._set_progress((i + 1) / total * 100)
-            self._set_status(f'重命名中 {i+1}/{total}')
+            self._animate_status(f'重命名中 {i+1}/{total}')
         self._set_progress(100)
+        self.root.after(0, self._stop_spinner)
+        self.root.after(0, self._clear_highlight)
         if errors:
             self._set_status(f'完成，{len(errors)} 个错误')
             self.root.after(100, lambda: messagebox.showerror('错误', '\n'.join(errors[:10])))
@@ -829,14 +865,16 @@ class ImgBatchApp:
                          daemon=True).start()
 
     def _watermark_thread(self, folder, file_list, params, do_backup, replace, out):
-        self._set_status('正在加水印...')
+        self._animate_status('正在加水印')
+        self.root.after(0, self._start_spinner)
         self._set_progress(0)
         if do_backup:
-            self._set_status('正在备份...')
+            self._animate_status('正在备份')
             try:
                 self._do_backup(folder, file_list)
             except Exception as e:
                 self._set_status(f'备份失败: {e}')
+                self.root.after(0, self._stop_spinner)
                 self.is_running = False
                 return
         total_before = 0
@@ -846,12 +884,13 @@ class ImgBatchApp:
         if not replace:
             os.makedirs(out, exist_ok=True)
 
-        # 预加载图片水印
         wm_img = None
         if params['type'] == 'image':
             wm_img = Image.open(params['image_path']).convert('RGBA')
 
         for i, fname in enumerate(file_list):
+            if fname in self.tree_items:
+                self.root.after(0, lambda t=self.tree_items[fname]: self._highlight_item(t))
             src = os.path.join(folder, fname)
             sb = os.path.getsize(src)
             total_before += sb
@@ -867,7 +906,6 @@ class ImgBatchApp:
                     self._draw_image_wm(layer, img.size, wm_img, params)
 
                 result = Image.alpha_composite(img, layer)
-                # Convert back if original was not RGBA
                 if img.mode != 'RGBA':
                     result = result.convert('RGB')
                 result.save(dst, optimize=True)
@@ -878,7 +916,7 @@ class ImgBatchApp:
             except Exception as e:
                 errors.append(f'{fname}: {e}')
             self._set_progress((i + 1) / total * 100)
-            self._set_status(f'水印中 {i+1}/{total}')
+            self._animate_status(f'水印中 {i+1}/{total}')
             time.sleep(0.005)
         self._finish_op(total_before, total_after, errors, '水印')
 
@@ -942,7 +980,8 @@ class ImgBatchApp:
         self.ai_tree.delete(*self.ai_tree.get_children())
         file_names = [d['name'] for d in self.file_data]
         prompt = self.ai_prompt_text.get('1.0', tk.END).strip()
-        self._set_status('AI 分析中...')
+        self._animate_status('AI 分析中')
+        self.root.after(0, self._start_spinner)
         threading.Thread(target=self._ai_thread, args=(api_key, file_names, prompt), daemon=True).start()
 
     def _ai_thread(self, api_key, file_names, prompt):
@@ -971,32 +1010,26 @@ class ImgBatchApp:
             data = json.loads(resp.read().decode('utf-8'))
             content = data['choices'][0]['message']['content'].strip()
 
-            # Robust parsing: try standard JSON, then Python literal, then fallback
             result_list = None
-            # 1. Try standard JSON (double quotes)
             json_match = re.search(r'\[.*\]', content, re.DOTALL)
             if json_match:
                 try:
                     result_list = json.loads(json_match.group())
                 except (json.JSONDecodeError, ValueError):
                     pass
-            # 2. Fallback: try Python literal eval (handles single quotes)
             if result_list is None:
                 try:
                     result_list = ast.literal_eval(json_match.group() if json_match else content)
                 except (ValueError, SyntaxError):
                     pass
-            # 3. Ultimate fallback: split by lines
             if result_list is None:
                 result_list = [line.strip() for line in content.splitlines() if line.strip()]
                 if not result_list:
                     result_list = [content]
 
-            # Ensure it's a list
             if not isinstance(result_list, list):
                 result_list = [result_list]
 
-            # Map results
             for item in result_list:
                 if isinstance(item, dict):
                     orig = item.get('original', '')
@@ -1006,14 +1039,15 @@ class ImgBatchApp:
                 elif isinstance(item, str) and len(self.ai_result) < len(file_names):
                     self.ai_result[file_names[len(self.ai_result)]] = self._sanitize_filename(item) or file_names[len(self.ai_result)]
 
-            # Fill missing with original
             for fn in file_names:
                 if fn not in self.ai_result:
                     self.ai_result[fn] = fn
 
             self.root.after(0, self._ai_populate)
+            self.root.after(0, self._stop_spinner)
             self._set_status(f'AI 分析完成，{len(self.ai_result)} 条建议')
         except Exception as e:
+            self.root.after(0, self._stop_spinner)
             self._set_status(f'AI 错误: {e}')
             self.root.after(0, lambda: messagebox.showerror('AI 错误', str(e)))
 
@@ -1079,13 +1113,86 @@ class ImgBatchApp:
         self.ai_tree.delete(*self.ai_tree.get_children())
         self._set_status('已清除 AI 结果')
 
+    # ═══════════════════════ 动画系统 ═══════════════════════
+
+    def _start_spinner(self):
+        self.spinner.pack(side=tk.LEFT, padx=(0, 6))
+        self._anim_spinner()
+
+    def _stop_spinner(self):
+        if self._anim_spinner_id:
+            self.root.after_cancel(self._anim_spinner_id)
+            self._anim_spinner_id = None
+        self.spinner.pack_forget()
+
+    def _anim_spinner(self):
+        self._anim_spinner_angle = (self._anim_spinner_angle + 15) % 360
+        self.spinner.itemconfig(self.spinner_arc, start=self._anim_spinner_angle)
+        self._anim_spinner_id = self.root.after(60, self._anim_spinner)
+
+    def _highlight_item(self, item_id):
+        self._clear_highlight()
+        self._anim_highlight_item = item_id
+        self._anim_highlight_on = True
+        self._do_highlight()
+
+    def _do_highlight(self):
+        if not self._anim_highlight_item:
+            return
+        tag = 'processing'
+        if self._anim_highlight_on:
+            self.tree.tag_configure(tag, background=ACCENT, foreground=BG3)
+            self.tree.item(self._anim_highlight_item, tags=(tag,))
+        else:
+            self.tree.tag_configure(tag, background=BG2, foreground=FG)
+            self.tree.item(self._anim_highlight_item, tags=(tag,))
+        self._anim_highlight_on = not self._anim_highlight_on
+        self._anim_highlight_id = self.root.after(350, self._do_highlight)
+
+    def _clear_highlight(self):
+        if self._anim_highlight_id:
+            self.root.after_cancel(self._anim_highlight_id)
+            self._anim_highlight_id = None
+        if self._anim_highlight_item:
+            self.tree.item(self._anim_highlight_item, tags=())
+            self._anim_highlight_item = None
+
+    def _animate_progress(self):
+        if self._progress_anim_id:
+            self.root.after_cancel(self._progress_anim_id)
+        diff = self._progress_target - self._progress_current
+        if abs(diff) < 0.5:
+            self._progress_current = self._progress_target
+            self.progress.config(value=self._progress_current)
+            return
+        step = diff * 0.15
+        self._progress_current += step
+        self.progress.config(value=self._progress_current)
+        self._progress_anim_id = self.root.after(20, self._animate_progress)
+
+    def _set_progress(self, val):
+        self._progress_target = val
+        self.root.after(0, self._animate_progress)
+
+    def _animate_status(self, msg):
+        if self._status_anim_id:
+            self.root.after_cancel(self._status_anim_id)
+        dots = ['', '.', '..', '...']
+        def cycle(i=0):
+            self.lbl_status.config(text=f'{msg}{dots[i % 4]}')
+            self._status_anim_id = self.root.after(400, lambda: cycle(i + 1))
+        cycle()
+
+    def _stop_status_anim(self):
+        if self._status_anim_id:
+            self.root.after_cancel(self._status_anim_id)
+            self._status_anim_id = None
+
     # ═══════════════════════ 线程工具 ═══════════════════════
 
     def _set_status(self, msg):
+        self._stop_status_anim()
         self.root.after(0, lambda: self.lbl_status.config(text=msg))
-
-    def _set_progress(self, val):
-        self.root.after(0, lambda: self.progress.config(value=val))
 
     def _update_row_size(self, fname, new_size):
         if fname in self.tree_items:
@@ -1105,6 +1212,8 @@ class ImgBatchApp:
         ratio = (total_after / total_before * 100) if total_before else 0
         msg = (f'{self._fmt_size(total_before)} → {self._fmt_size(total_after)} '
                f'(节省 {self._fmt_size(saved)}, {ratio:.1f}%)')
+        self._stop_spinner()
+        self._clear_highlight()
         self._set_status(f'{op_name}完成 — {msg}')
         self.is_running = False
         if post_refresh:
