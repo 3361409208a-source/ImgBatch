@@ -123,6 +123,7 @@ class ImgBatchApp:
         self.folder_entry.pack(side=tk.LEFT, padx=(6, 6), fill=tk.X, expand=True)
         ttk.Button(top, text='浏览...', command=self._browse).pack(side=tk.LEFT)
         ttk.Button(top, text='刷新', command=self._refresh).pack(side=tk.LEFT, padx=(6, 0))
+        ttk.Button(top, text='打开图片', command=self._open_single).pack(side=tk.LEFT, padx=(6, 0))
         self._drop_target(top)
 
         # ── 文件列表 ──
@@ -528,14 +529,28 @@ class ImgBatchApp:
         path = filedialog.askopenfilename(
             title='Open Image',
             filetypes=[('Images', '*.png *.jpg *.jpeg *.webp *.bmp *.tiff *.gif *.ico')])
+        if path:
+            self._single_load(path)
+
+    def _open_single(self):
+        path = filedialog.askopenfilename(
+            title='Open Image',
+            filetypes=[('Images', '*.png *.jpg *.jpeg *.webp *.bmp *.tiff *.gif *.ico')])
         if not path:
             return
+        # Switch to Single tab and load
+        for i, tab_id in enumerate(self.notebook.tabs()):
+            if self.notebook.tab(tab_id, 'text') == ' 单张处理 ':
+                self.notebook.select(tab_id)
+                break
+        self._single_load(path)
+
+    def _single_load(self, path):
         self.single_path = path
         try:
             self.single_img = Image.open(path)
-            # Show preview
             preview = self._make_thumbnail(self.single_img, 280, 260)
-            self.single_tk_img = preview  # keep reference
+            self.single_tk_img = preview
             self.single_canvas.delete('all')
             cw = self.single_canvas.winfo_width() or 300
             ch = self.single_canvas.winfo_height() or 280
@@ -543,7 +558,6 @@ class ImgBatchApp:
             y = max((ch - preview.height) // 2, 0)
             self.single_canvas.create_image(x, y, anchor=tk.NW,
                                              image=preview, tags='preview')
-            # Info
             sz = self._fmt_size(os.path.getsize(path))
             info = (f'Size: {sz} | Dimensions: '
                     f'{self.single_img.width}x{self.single_img.height} | '
