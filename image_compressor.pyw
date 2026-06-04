@@ -949,10 +949,11 @@ class ImgBatchApp:
         try:
             import urllib.request
             import urllib.error
+            import ast
             req_body = json.dumps({
                 'model': 'deepseek-chat',
                 'messages': [
-                    {'role': 'system', 'content': '你是一个文件命名助手，只返回JSON数组。'},
+                    {'role': 'system', 'content': '你是一个文件命名助手，严格返回 JSON 数组（标准 JSON，使用双引号）。每个元素为 {"original": "原文件名", "new": "新文件名"}。'},
                     {'role': 'user', 'content': f'{prompt}\n\n文件名列表:\n' + '\n'.join(file_names)}
                 ],
                 'temperature': 0.7,
@@ -970,33 +971,65 @@ class ImgBatchApp:
             data = json.loads(resp.read().decode('utf-8'))
             content = data['choices'][0]['message']['content'].strip()
 
-            # Try to parse JSON from response
+            # Robust parsing: try standard JSON, then Python literal, then fallback
+            result_list = None
+            # 1. Try standard JSON (double quotes)
             json_match = re.search(r'\[.*\]', content, re.DOTALL)
             if json_match:
-                result_list = json.loads(json_match.group())
-            else:
-                result_list = [content]
+                try:
+                    result_list = json.loads(json_match.group())
+                except (json.JSONDecodeError, ValueError):
+                    pass
+            # 2. Fallback: try Python literal eval (handles single quotes)
+            if result_list is None:
+                try:
+                    result_list = ast.literal_eval(json_match.group() if json_match else content)
+                except (ValueError, SyntaxError):
+                    pass
+            # 3. Ultimate fallback: split by lines
+            if result_list is None:
+                result_list = [line.strip() for line in content.splitlines() if line.strip()]
+                if not result_list:
+                    result_list = [content]
+
+            # Ensure it's a list
+            if not isinstance(result_list, list):
+                result_list = [result_list]
 
             # Map results
-            if isinstance(result_list, list):
-                for item in result_list:
-                    if isinstance(item, dict) and 'original' in item:
-                        self.ai_result[item['original']] = item.get('suggested', item.get('new_name', str(item)))
-                    elif isinstance(item, str):
-                        if len(self.ai_result) < len(file_names):
-                            self.ai_result[file_names[len(self.ai_result)]] = item
-                # Fill missing with original
-                for fn in file_names:
-                    if fn not in self.ai_result:
-                        self.ai_result[fn] = fn
-            else:
-                self.ai_result = {fn: str(result_list) for fn in file_names}
+            for item in result_list:
+                if isinstance(item, dict):
+                    orig = item.get('original', '')
+                    new_name = item.get('new', item.get('new_name', item.get('suggested', '')))
+                    if orig and orig in file_names:
+                        self.ai_result[orig] = self._sanitize_filename(new_name) or orig
+                elif isinstance(item, str) and len(self.ai_result) < len(file_names):
+                    self.ai_result[file_names[len(self.ai_result)]] = self._sanitize_filename(item) or file_names[len(self.ai_result)]
+
+            # Fill missing with original
+            for fn in file_names:
+                if fn not in self.ai_result:
+                    self.ai_result[fn] = fn
 
             self.root.after(0, self._ai_populate)
             self._set_status(f'AI 分析完成，{len(self.ai_result)} 条建议')
         except Exception as e:
             self._set_status(f'AI 错误: {e}')
             self.root.after(0, lambda: messagebox.showerror('AI 错误', str(e)))
+
+    def _sanitize_filename(self, name):
+        """清理文件名中的非法字符"""
+        if not name:
+            return name
+        # Remove Windows illegal chars: < > : " / \ | ? *
+        name = re.sub(r'[<>:"/\\|?*]', '', name)
+        # Remove control chars
+        name = re.sub(r'[\x00-\x1f]', '', name)
+        # Remove leading/trailing dots and spaces
+        name = name.strip('. ')
+        # Replace curly quotes and braces
+        name = name.replace('{', '').replace('}', '').replace("'", '').replace('"', '')
+        return name
 
     def _ai_populate(self):
         self.ai_tree.delete(*self.ai_tree.get_children())
@@ -1010,11 +1043,19 @@ class ImgBatchApp:
         folder = self.folder.get()
         mapping = {}
         for orig, sugg in self.ai_result.items():
-            naming_source = sugg if '.' in sugg else orig
+            if not sugg or not isinstance(sugg, str):
+                continue
+            # Ensure sugg has extension, otherwise use original
+            if '.' not in sugg:
+                sugg = sugg + os.path.splitext(orig)[1]
+            # Extract base name and force original extension
             orig_ext = os.path.splitext(orig)[1]
             sugg_base = os.path.splitext(sugg)[0]
-            new_name = sugg_base + orig_ext
-            if new_name != orig:
+            new_name = self._sanitize_filename(sugg_base) + orig_ext
+            if new_name and new_name != orig:
+                # Prevent duplicate names
+                if new_name in mapping.values() or new_name in self.ai_result:
+                    new_name = f"{os.path.splitext(new_name)[0]}_{len(mapping)}{orig_ext}"
                 mapping[orig] = new_name
         if not mapping:
             messagebox.showinfo('提示', '没有需要重命名的文件')
