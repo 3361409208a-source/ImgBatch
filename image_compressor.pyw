@@ -268,9 +268,9 @@ class ImgBatchApp:
         ttk.Label(self.r_seq_row, text='模板:', width=8).pack(side=tk.LEFT)
         ttk.Entry(self.r_seq_row, textvariable=self.r_seq_template, width=20).pack(side=tk.LEFT, padx=4)
         ttk.Label(self.r_seq_row, text='起始:').pack(side=tk.LEFT, padx=(10, 2))
-        ttk.Spinbox(self.r_seq_row, from_=1, to=99999, textvariable=self.r_seq_start, width=5).pack(side=tk.LEFT)
+        tk.Spinbox(self.r_seq_row, from_=1, to=99999, textvariable=self.r_seq_start, width=5, bg=ENTRY_BG, fg=FG, insertbackground=FG, highlightthickness=0, borderwidth=0).pack(side=tk.LEFT)
         ttk.Label(self.r_seq_row, text='位数:').pack(side=tk.LEFT, padx=(10, 2))
-        ttk.Spinbox(self.r_seq_row, from_=1, to=10, textvariable=self.r_seq_digits, width=3).pack(side=tk.LEFT)
+        tk.Spinbox(self.r_seq_row, from_=1, to=10, textvariable=self.r_seq_digits, width=3, bg=ENTRY_BG, fg=FG, insertbackground=FG, highlightthickness=0, borderwidth=0).pack(side=tk.LEFT)
         ttk.Label(self.r_seq_row, text='{num}=序号', foreground='#6c7086').pack(side=tk.LEFT, padx=4)
 
         # 大小写
@@ -322,7 +322,7 @@ class ImgBatchApp:
         ttk.Label(self.w_text_frame, text='内容:', width=10).pack(side=tk.LEFT)
         ttk.Entry(self.w_text_frame, textvariable=self.w_text, width=25).pack(side=tk.LEFT, padx=4)
         ttk.Label(self.w_text_frame, text='字号:').pack(side=tk.LEFT, padx=(8, 2))
-        ttk.Spinbox(self.w_text_frame, from_=8, to=200, textvariable=self.w_fontsize, width=4).pack(side=tk.LEFT)
+        tk.Spinbox(self.w_text_frame, from_=8, to=200, textvariable=self.w_fontsize, width=4, bg=ENTRY_BG, fg=FG, insertbackground=FG, highlightthickness=0, borderwidth=0).pack(side=tk.LEFT)
         ttk.Label(self.w_text_frame, text='颜色:').pack(side=tk.LEFT, padx=(8, 2))
         ttk.Entry(self.w_text_frame, textvariable=self.w_color, width=8).pack(side=tk.LEFT)
         ttk.Label(self.w_text_frame, text='(#HEX)', foreground='#6c7086').pack(side=tk.LEFT, padx=2)
@@ -335,7 +335,7 @@ class ImgBatchApp:
         ttk.Button(self.w_img_frame, text='浏览',
                    command=lambda: self._browse_img(self.w_image_path)).pack(side=tk.LEFT)
         ttk.Label(self.w_img_frame, text='缩放%:').pack(side=tk.LEFT, padx=(8, 2))
-        ttk.Spinbox(self.w_img_frame, from_=5, to=100, textvariable=self.w_img_scale, width=4).pack(side=tk.LEFT)
+        tk.Spinbox(self.w_img_frame, from_=5, to=100, textvariable=self.w_img_scale, width=4, bg=ENTRY_BG, fg=FG, insertbackground=FG, highlightthickness=0, borderwidth=0).pack(side=tk.LEFT)
 
         # 通用参数
         r2 = ttk.Frame(f); r2.pack(fill=tk.X, pady=2)
@@ -1095,7 +1095,7 @@ class ImgBatchApp:
         style.configure('Treeview.Heading', background=BG2, foreground=FG)
         style.map('Treeview', background=[('selected', ACCENT)], foreground=[('selected', '#1e1e2e')])
         style.map('Treeview.Heading', background=[('active', '#45475a')])
-        style.configure('TSpinbox', fieldbackground=ENTRY_BG, foreground=FG, background=BG2)
+
 
 
 class BackupDialog:
