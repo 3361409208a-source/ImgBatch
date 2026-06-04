@@ -115,6 +115,19 @@ python image_compressor.pyw
 > 双击 `启动.bat` 一键启动  
 > *Double-click `启动.bat`*
 
+### 📦 打包为 EXE Build to EXE
+
+```bash
+# 一键打包（自带 PyInstaller 安装检测）
+build.bat
+
+# 或在终端手动执行
+pip install pyinstaller
+pyinstaller --onefile --windowed --name ImgBatch image_compressor.pyw
+```
+
+> 输出文件在 `dist/ImgBatch.exe`，单文件便携，无需安装 Python
+
 ---
 
 ## 🔑 AI 重命名配置
@@ -143,6 +156,7 @@ python image_compressor.pyw
 ImgBatch/
 ├── image_compressor.pyw    # 主程序
 ├── 启动.bat                # 启动器
+├── build.bat               # 一键打包 EXE
 ├── README.md               # 文档
 └── 说明.txt                # 中文说明
 ```
