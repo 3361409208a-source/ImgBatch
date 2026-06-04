@@ -42,6 +42,33 @@ ENTRY_BG = '#FFFFFF'
 
 
 class ImgBatchApp:
+
+    TRANSLATIONS = {'zh': {'tab_compress': '压缩', 'tab_format': '格式转换', 'tab_rename': '重命名', 'tab_watermark': '水印', 'tab_airename': 'AI重命名', 'tab_single': '单张处理', 'app_title': 'ImgBatch -- 图片批量处理工具', 'target_folder': '目标文件夹:', 'browse': '浏览...', 'refresh': '刷新', 'open_image': '打开图片', 'file_list': '文件列表（双击预览）', 'col_name': '文件名', 'col_size': '大小', 'col_dim': '尺寸', 'col_fmt': '格式', 'quality': '质量:', 'resize': '缩放:', 'replace_orig': '替换原文件', 'output_to': '输出到:', 'enable_backup': '启用备份', 'start_compress': '开始压缩', 'backup_mgr': '备份管理', 'to_format': '转为格式:', 'start_convert': '开始转换', 'mode': '模式:', 'prefix_mode': '添加前缀', 'suffix_mode': '添加后缀', 'replace_mode': '查找替换', 'seq_mode': '序号模板', 'case_mode': '大小写转换', 'prefix': '前缀:', 'suffix': '后缀:', 'find': '查找:', 'replace_to': '替换为:', 'template': '模板:', 'start': '起始:', 'digits': '位数:', 'num_seq': '{num}=序号', 'lowercase': '全小写', 'uppercase': '全大写', 'preview_rename': '预览重命名', 'run_rename': '执行重命名', 'wm_type': '水印类型:', 'text_type': '文字', 'image_type': '图片', 'content': '内容:', 'font_size': '字号:', 'color': '颜色:', 'scale_pct': '缩放%:', 'opacity': '透明度:', 'position': '位置:', 'top_left': '左上', 'top_right': '右上', 'center': '居中', 'bottom_left': '左下', 'bottom_right': '右下', 'batch_wm': '批量加水印', 'show_hide': '显示/隐藏', 'prompt': '提示词 Prompt:', 'ai_analyze': 'AI 分析文件名', 'apply_ai': '应用 AI 重命名', 'clear_results': '清除结果', 'ai_preview': 'AI 建议预览:', 'orig_name': '原文件名', 'ai_suggested': 'AI 建议名', 'ready': '就绪', 'error': '错误', 'notice': '提示', 'confirm': '确认', 'done': '完成', 'preview_failed': '预览失败', 'confirm_restore': '确认恢复', 'restore_done': '恢复完成', 'sel_img_folder': '选择图片文件夹', 'sel_out_folder': '选择输出文件夹', 'sel_wm_img': '选择水印图片', 'open_image_fd': 'Open Image', 'save_as': 'Save As', 'no_image': '未加载图片', 'open_image_btn': '打开图片...', 'quick_compress': '快速压缩', 'compress_save': '压缩保存', 'quick_convert': '快速转换', 'convert_save': '转换保存', 'quick_watermark': '快速水印', 'wm_save': '水印保存', 'save_as_btn': '另存为...', 'preview_colon': '预览:', 'size_colon': 'Size:', 'dim_colon': 'Dimensions:', 'fmt_colon': 'Format:', 'hidden_default': '默认隐藏', 'ai_loading_anim': '动画更新 AI 树中的加载提示', 'cleared_ai': '已清除 AI 结果', 'illegal_chars': '文件名中的非法字符', 'total': '共: ', 'save': '保存', 'saved': '节省'}, 'en': {'tab_compress': 'Compress', 'tab_format': 'Format', 'tab_rename': 'Rename', 'tab_watermark': 'Watermark', 'tab_airename': 'AI Rename', 'tab_single': 'Single', 'app_title': 'ImgBatch -- Batch Image Processor', 'target_folder': 'Target Folder:', 'browse': 'Browse...', 'refresh': 'Refresh', 'open_image': 'Open Image', 'file_list': 'File List (dbl-click preview)', 'col_name': 'Name', 'col_size': 'Size', 'col_dim': 'Dimensions', 'col_fmt': 'Format', 'quality': 'Quality:', 'resize': 'Resize:', 'replace_orig': 'Replace Original', 'output_to': 'Output to:', 'enable_backup': 'Enable Backup', 'start_compress': 'Start Compress', 'backup_mgr': 'Backup Manager', 'to_format': 'To Format:', 'start_convert': 'Start Convert', 'mode': 'Mode:', 'prefix_mode': 'Prefix', 'suffix_mode': 'Suffix', 'replace_mode': 'Replace', 'seq_mode': 'Sequence', 'case_mode': 'Case', 'prefix': 'Prefix:', 'suffix': 'Suffix:', 'find': 'Find:', 'replace_to': 'Replace:', 'template': 'Template:', 'start': 'Start:', 'digits': 'Digits:', 'num_seq': '{num}=number', 'lowercase': 'lowercase', 'uppercase': 'UPPERCASE', 'preview_rename': 'Preview Rename', 'run_rename': 'Run Rename', 'wm_type': 'Watermark Type:', 'text_type': 'Text', 'image_type': 'Image', 'content': 'Content:', 'font_size': 'Font Size:', 'color': 'Color:', 'scale_pct': 'Scale %:', 'opacity': 'Opacity:', 'position': 'Position:', 'top_left': 'Top L', 'top_right': 'Top R', 'center': 'Center', 'bottom_left': 'Bot L', 'bottom_right': 'Bot R', 'batch_wm': 'Batch Watermark', 'show_hide': 'Show/Hide', 'prompt': 'Prompt:', 'ai_analyze': 'AI Analyze', 'apply_ai': 'Apply AI Names', 'clear_results': 'Clear Results', 'ai_preview': 'AI Preview:', 'orig_name': 'Original', 'ai_suggested': 'AI Suggested', 'ready': 'Ready', 'error': 'Error', 'notice': 'Notice', 'confirm': 'Confirm', 'done': 'Done', 'preview_failed': 'Preview Failed', 'confirm_restore': 'Confirm Restore', 'restore_done': 'Restore Done', 'sel_img_folder': 'Select Image Folder', 'sel_out_folder': 'Select Output Folder', 'sel_wm_img': 'Select Watermark Image', 'open_image_fd': 'Open Image', 'save_as': 'Save As', 'no_image': 'No Image Loaded', 'open_image_btn': 'Open Image...', 'quick_compress': 'Quick Compress', 'compress_save': 'Compress & Save', 'quick_convert': 'Quick Convert', 'convert_save': 'Convert & Save', 'quick_watermark': 'Quick Watermark', 'wm_save': 'Watermark & Save', 'save_as_btn': 'Save As...', 'preview_colon': 'Preview:', 'size_colon': 'Size:', 'dim_colon': 'Dimensions:', 'fmt_colon': 'Format:', 'hidden_default': 'Hidden by default', 'ai_loading_anim': 'AI loading animation', 'cleared_ai': 'Cleared AI results', 'illegal_chars': 'Illegal chars in filename', 'total': 'Total: ', 'save': 'Save', 'saved': 'saved'}}
+
+    def _t(self, key):
+        return self.TRANSLATIONS.get(self.current_lang, {}).get(key, key)
+
+    def _switch_lang(self, lang):
+        self.current_lang = lang
+        self.root.title(self._t('app_title'))
+        # Update top labels
+        self.folder_label.config(text=self._t('target_folder'))
+        self.list_label.config(text=self._t('file_list'))
+        self.lbl_status.config(text=self._t('ready'))
+        # Destroy and rebuild notebook tabs
+        tabs = list(self.notebook.tabs())
+        for tab_id in tabs:
+            self.notebook.forget(tab_id)
+            tab_widget = self.notebook.nametowidget(tab_id)
+            tab_widget.destroy()
+        self._tab_compress()
+        self._tab_convert()
+        self._tab_rename()
+        self._tab_watermark()
+        self._tab_ai_rename()
+        self._tab_single()
+        self.notebook.select(0)
+
     def __init__(self, root):
         self.root = root
         self.root.title('ImgBatch — Batch Image Processor')
@@ -53,6 +80,7 @@ class ImgBatchApp:
         self.file_data = []
         self.is_running = False
         self.tree_items = {}
+        self.current_lang = 'zh'
 
         # ── 动画 Animation ──
         self._anim_spinner_angle = 0
@@ -118,19 +146,26 @@ class ImgBatchApp:
         # ── 顶部：文件夹选择 ──
         top = ttk.Frame(self.root)
         top.pack(fill=tk.X, padx=12, pady=(10, 0))
-        ttk.Label(top, text='目标文件夹:', font=('Tahoma', 10, 'bold')).pack(side=tk.LEFT)
+        self.folder_label = ttk.Label(top, text=self._t('target_folder'), font=('Tahoma', 10, 'bold'))
+        self.folder_label.pack(side=tk.LEFT)
         self.folder_entry = ttk.Entry(top, textvariable=self.folder, width=55, font=('Tahoma', 10))
         self.folder_entry.pack(side=tk.LEFT, padx=(6, 6), fill=tk.X, expand=True)
-        ttk.Button(top, text='浏览...', command=self._browse).pack(side=tk.LEFT)
-        ttk.Button(top, text='刷新', command=self._refresh).pack(side=tk.LEFT, padx=(6, 0))
-        ttk.Button(top, text='打开图片', command=self._open_single).pack(side=tk.LEFT, padx=(6, 0))
+        ttk.Button(top, text=self._t('browse'), command=self._browse).pack(side=tk.LEFT)
+        ttk.Button(top, text=self._t('refresh'), command=self._refresh).pack(side=tk.LEFT, padx=(6, 0))
+        ttk.Button(top, text=self._t('open_image'), command=self._open_single).pack(side=tk.LEFT, padx=(6, 0))
+        # Language switcher
+        lang_fr = ttk.Frame(top)
+        lang_fr.pack(side=tk.RIGHT, padx=(10, 0))
+        ttk.Button(lang_fr, text='中文', width=4, command=lambda: self._switch_lang('zh')).pack(side=tk.LEFT)
+        ttk.Button(lang_fr, text='EN', width=3, command=lambda: self._switch_lang('en')).pack(side=tk.LEFT, padx=(2, 0))
         self._drop_target(top)
 
         # ── 文件列表 ──
         ttk.Separator(self.root, orient=tk.HORIZONTAL).pack(fill=tk.X, padx=12, pady=6)
         list_hdr = ttk.Frame(self.root)
         list_hdr.pack(fill=tk.X, padx=12)
-        ttk.Label(list_hdr, text='文件列表（双击预览）', font=('Tahoma', 9, 'bold')).pack(side=tk.LEFT)
+        self.list_label = ttk.Label(list_hdr, text=self._t('file_list'), font=('Tahoma', 9, 'bold'))
+        self.list_label.pack(side=tk.LEFT)
         self.lbl_count = ttk.Label(list_hdr, text='')
         self.lbl_count.pack(side=tk.RIGHT)
 
@@ -176,7 +211,7 @@ class ImgBatchApp:
                                                     outline=ACCENT, width=2, style='arc', tags='arc')
         self.spinner.pack_forget()  # 默认隐藏
 
-        self.lbl_status = ttk.Label(sf, text='就绪')
+        self.lbl_status = ttk.Label(sf, text=self._t('ready'))
         self.lbl_status.pack(side=tk.LEFT)
         self.lbl_stats = ttk.Label(sf, text='')
         self.lbl_stats.pack(side=tk.RIGHT)
@@ -189,29 +224,29 @@ class ImgBatchApp:
 
     def _tab_compress(self):
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text=' Compress ')
+        self.notebook.add(tab, text=' ' + self._t('tab_compress') + ' ')
         f = ttk.Frame(tab)
         f.pack(fill=tk.X, padx=10, pady=8)
 
         # 质量
         r1 = ttk.Frame(f); r1.pack(fill=tk.X, pady=2)
-        ttk.Label(r1, text='质量:', width=10).pack(side=tk.LEFT)
+        ttk.Label(r1, text=self._t('quality'), width=10).pack(side=tk.LEFT)
         ttk.Scale(r1, from_=1, to=100, variable=self.c_quality,
                   command=lambda v: self._slider_label(v, self.ql)).pack(side=tk.LEFT, fill=tk.X, expand=True)
         self.ql = ttk.Label(r1, text='75%', width=5); self.ql.pack(side=tk.LEFT, padx=4)
 
         # Resize
         r2 = ttk.Frame(f); r2.pack(fill=tk.X, pady=2)
-        ttk.Label(r2, text='缩放:', width=10).pack(side=tk.LEFT)
+        ttk.Label(r2, text=self._t('resize'), width=10).pack(side=tk.LEFT)
         ttk.Scale(r2, from_=10, to=100, variable=self.c_resize,
                   command=lambda v: self._slider_label(v, self.rl)).pack(side=tk.LEFT, fill=tk.X, expand=True)
         self.rl = ttk.Label(r2, text='100%', width=5); self.rl.pack(side=tk.LEFT, padx=4)
 
         # Output mode
         r3 = ttk.Frame(f); r3.pack(fill=tk.X, pady=4)
-        ttk.Radiobutton(r3, text='替换原文件', variable=self.c_replace, value=True,
+        ttk.Radiobutton(r3, text=self._t('replace_orig'), variable=self.c_replace, value=True,
                         command=lambda: self._toggle_out(self.c_replace, self.c_outrow, self.c_outfolder)).pack(side=tk.LEFT)
-        ttk.Radiobutton(r3, text='输出到:', variable=self.c_replace, value=False,
+        ttk.Radiobutton(r3, text=self._t('output_to'), variable=self.c_replace, value=False,
                         command=lambda: self._toggle_out(self.c_replace, self.c_outrow, self.c_outfolder)).pack(side=tk.LEFT, padx=10)
         self.c_outrow = ttk.Frame(r3)
         ttk.Entry(self.c_outrow, textvariable=self.c_outfolder, width=40).pack(side=tk.LEFT, padx=4)
@@ -219,34 +254,34 @@ class ImgBatchApp:
 
         # Backup + Button
         r4 = ttk.Frame(f); r4.pack(fill=tk.X, pady=6)
-        ttk.Checkbutton(r4, text='启用备份', variable=self.c_backup).pack(side=tk.LEFT)
-        ttk.Button(r4, text='开始压缩', command=self._run_compress).pack(side=tk.RIGHT, ipadx=8)
-        ttk.Button(r4, text='备份管理', command=self._backup_mgr).pack(side=tk.RIGHT, padx=8)
+        ttk.Checkbutton(r4, text=self._t('enable_backup'), variable=self.c_backup).pack(side=tk.LEFT)
+        ttk.Button(r4, text=self._t('start_compress'), command=self._run_compress).pack(side=tk.RIGHT, ipadx=8)
+        ttk.Button(r4, text=self._t('backup_mgr'), command=self._backup_mgr).pack(side=tk.RIGHT, padx=8)
 
     # ═══════════════════════ Tab: FormatConvert ═══════════════════════
 
     def _tab_convert(self):
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text=' Format ')
+        self.notebook.add(tab, text=' ' + self._t('tab_format') + ' ')
         f = ttk.Frame(tab)
         f.pack(fill=tk.X, padx=10, pady=8)
 
         r1 = ttk.Frame(f); r1.pack(fill=tk.X, pady=4)
-        ttk.Label(r1, text='转为格式:', width=10).pack(side=tk.LEFT)
+        ttk.Label(r1, text=self._t('to_format'), width=10).pack(side=tk.LEFT)
         self._fmt_btns(r1)
 
         r2 = ttk.Frame(f); r2.pack(fill=tk.X, pady=4)
-        ttk.Radiobutton(r2, text='替换原文件', variable=self.v_conv_replace, value=True,
+        ttk.Radiobutton(r2, text=self._t('replace_orig'), variable=self.v_conv_replace, value=True,
                         command=lambda: self._toggle_out(self.v_conv_replace, self.conv_outrow, self.v_conv_outfolder)).pack(side=tk.LEFT)
-        ttk.Radiobutton(r2, text='输出到:', variable=self.v_conv_replace, value=False,
+        ttk.Radiobutton(r2, text=self._t('output_to'), variable=self.v_conv_replace, value=False,
                         command=lambda: self._toggle_out(self.v_conv_replace, self.conv_outrow, self.v_conv_outfolder)).pack(side=tk.LEFT, padx=10)
         self.conv_outrow = ttk.Frame(r2)
         ttk.Entry(self.conv_outrow, textvariable=self.v_conv_outfolder, width=40).pack(side=tk.LEFT, padx=4)
         ttk.Button(self.conv_outrow, text='Browse', command=lambda: self._browse_out(self.v_conv_outfolder)).pack(side=tk.LEFT)
 
         r3 = ttk.Frame(f); r3.pack(fill=tk.X, pady=6)
-        ttk.Checkbutton(r3, text='启用备份', variable=self.v_conv_backup).pack(side=tk.LEFT)
-        ttk.Button(r3, text='开始转换', command=self._run_convert).pack(side=tk.RIGHT, ipadx=8)
+        ttk.Checkbutton(r3, text=self._t('enable_backup'), variable=self.v_conv_backup).pack(side=tk.LEFT)
+        ttk.Button(r3, text=self._t('start_convert'), command=self._run_convert).pack(side=tk.RIGHT, ipadx=8)
 
     def _fmt_btns(self, parent):
         for fmt in CONVERT_TARGETS:
@@ -257,13 +292,13 @@ class ImgBatchApp:
 
     def _tab_rename(self):
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text=' Rename ')
+        self.notebook.add(tab, text=' ' + self._t('tab_rename') + ' ')
         f = ttk.Frame(tab)
         f.pack(fill=tk.X, padx=10, pady=8)
 
         # 模式选择
         r0 = ttk.Frame(f); r0.pack(fill=tk.X, pady=2)
-        ttk.Label(r0, text='模式:', width=8).pack(side=tk.LEFT)
+        ttk.Label(r0, text=self._t('mode'), width=8).pack(side=tk.LEFT)
         modes = [('添加前缀', 'prefix'), ('添加后缀', 'suffix'), ('查找替换', 'replace'),
                  ('序号模板', 'seq'), ('大小写转换', 'case')]
         for txt, val in modes:
@@ -276,39 +311,39 @@ class ImgBatchApp:
 
         # 前后缀
         self.r_prefix_row = ttk.Frame(f)
-        ttk.Label(self.r_prefix_row, text='前缀:', width=8).pack(side=tk.LEFT)
+        ttk.Label(self.r_prefix_row, text=self._t('prefix'), width=8).pack(side=tk.LEFT)
         ttk.Entry(self.r_prefix_row, textvariable=self.r_prefix, width=20).pack(side=tk.LEFT, padx=4)
 
         self.r_suffix_row = ttk.Frame(f)
-        ttk.Label(self.r_suffix_row, text='后缀:', width=8).pack(side=tk.LEFT)
+        ttk.Label(self.r_suffix_row, text=self._t('suffix'), width=8).pack(side=tk.LEFT)
         ttk.Entry(self.r_suffix_row, textvariable=self.r_suffix, width=20).pack(side=tk.LEFT, padx=4)
 
         # Replace
         self.r_replace_row = ttk.Frame(f)
-        ttk.Label(self.r_replace_row, text='查找:', width=8).pack(side=tk.LEFT)
+        ttk.Label(self.r_replace_row, text=self._t('find'), width=8).pack(side=tk.LEFT)
         ttk.Entry(self.r_replace_row, textvariable=self.r_replace_src, width=18).pack(side=tk.LEFT)
-        ttk.Label(self.r_replace_row, text='替换为:').pack(side=tk.LEFT, padx=(10, 4))
+        ttk.Label(self.r_replace_row, text=self._t('replace_to')).pack(side=tk.LEFT, padx=(10, 4))
         ttk.Entry(self.r_replace_row, textvariable=self.r_replace_dst, width=18).pack(side=tk.LEFT)
 
         # Sequence
         self.r_seq_row = ttk.Frame(f)
-        ttk.Label(self.r_seq_row, text='模板:', width=8).pack(side=tk.LEFT)
+        ttk.Label(self.r_seq_row, text=self._t('template'), width=8).pack(side=tk.LEFT)
         ttk.Entry(self.r_seq_row, textvariable=self.r_seq_template, width=20).pack(side=tk.LEFT, padx=4)
-        ttk.Label(self.r_seq_row, text='起始:').pack(side=tk.LEFT, padx=(10, 2))
+        ttk.Label(self.r_seq_row, text=self._t('start')).pack(side=tk.LEFT, padx=(10, 2))
         tk.Spinbox(self.r_seq_row, from_=1, to=99999, textvariable=self.r_seq_start, width=5, bg=ENTRY_BG, fg=FG, insertbackground=FG, highlightthickness=0, borderwidth=0).pack(side=tk.LEFT)
-        ttk.Label(self.r_seq_row, text='位数:').pack(side=tk.LEFT, padx=(10, 2))
+        ttk.Label(self.r_seq_row, text=self._t('digits')).pack(side=tk.LEFT, padx=(10, 2))
         tk.Spinbox(self.r_seq_row, from_=1, to=10, textvariable=self.r_seq_digits, width=3, bg=ENTRY_BG, fg=FG, insertbackground=FG, highlightthickness=0, borderwidth=0).pack(side=tk.LEFT)
-        ttk.Label(self.r_seq_row, text='{num}=序号', foreground='#6c7086').pack(side=tk.LEFT, padx=4)
+        ttk.Label(self.r_seq_row, text=self._t('num_seq'), foreground='#6c7086').pack(side=tk.LEFT, padx=4)
 
         # Size写
         self.r_case_row = ttk.Frame(f)
-        ttk.Checkbutton(self.r_case_row, text='全小写', variable=self.r_lowercase).pack(side=tk.LEFT, padx=4)
-        ttk.Checkbutton(self.r_case_row, text='全大写', variable=self.r_uppercase).pack(side=tk.LEFT, padx=4)
+        ttk.Checkbutton(self.r_case_row, text=self._t('lowercase'), variable=self.r_lowercase).pack(side=tk.LEFT, padx=4)
+        ttk.Checkbutton(self.r_case_row, text=self._t('uppercase'), variable=self.r_uppercase).pack(side=tk.LEFT, padx=4)
 
         # 预览 + 按钮
         r5 = ttk.Frame(f); r5.pack(fill=tk.X, pady=6)
-        ttk.Button(r5, text='预览重命名', command=self._preview_rename).pack(side=tk.LEFT)
-        ttk.Button(r5, text='执行重命名', command=self._run_rename).pack(side=tk.RIGHT, ipadx=8)
+        ttk.Button(r5, text=self._t('preview_rename'), command=self._preview_rename).pack(side=tk.LEFT)
+        ttk.Button(r5, text=self._t('run_rename'), command=self._run_rename).pack(side=tk.RIGHT, ipadx=8)
 
         self._toggle_rename_ui()
 
@@ -331,26 +366,26 @@ class ImgBatchApp:
 
     def _tab_watermark(self):
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text=' Watermark ')
+        self.notebook.add(tab, text=' ' + self._t('tab_watermark') + ' ')
         f = ttk.Frame(tab)
         f.pack(fill=tk.X, padx=10, pady=8)
 
         # 类型
         r0 = ttk.Frame(f); r0.pack(fill=tk.X, pady=2)
-        ttk.Label(r0, text='水印类型:', width=10).pack(side=tk.LEFT)
-        ttk.Radiobutton(r0, text='文字', variable=self.w_type, value='text',
+        ttk.Label(r0, text=self._t('wm_type'), width=10).pack(side=tk.LEFT)
+        ttk.Radiobutton(r0, text=self._t('text_type'), variable=self.w_type, value='text',
                         command=lambda: self._toggle_wm_ui()).pack(side=tk.LEFT, padx=4)
-        ttk.Radiobutton(r0, text='图片', variable=self.w_type, value='image',
+        ttk.Radiobutton(r0, text=self._t('image_type'), variable=self.w_type, value='image',
                         command=lambda: self._toggle_wm_ui()).pack(side=tk.LEFT, padx=4)
 
         # ── TextWatermark参数 ──
         self.w_text_frame = ttk.Frame(f)
         self.w_text_frame.pack(fill=tk.X, pady=2)
-        ttk.Label(self.w_text_frame, text='内容:', width=10).pack(side=tk.LEFT)
+        ttk.Label(self.w_text_frame, text=self._t('content'), width=10).pack(side=tk.LEFT)
         ttk.Entry(self.w_text_frame, textvariable=self.w_text, width=25).pack(side=tk.LEFT, padx=4)
-        ttk.Label(self.w_text_frame, text='字号:').pack(side=tk.LEFT, padx=(8, 2))
+        ttk.Label(self.w_text_frame, text=self._t('font_size')).pack(side=tk.LEFT, padx=(8, 2))
         tk.Spinbox(self.w_text_frame, from_=8, to=200, textvariable=self.w_fontsize, width=4, bg=ENTRY_BG, fg=FG, insertbackground=FG, highlightthickness=0, borderwidth=0).pack(side=tk.LEFT)
-        ttk.Label(self.w_text_frame, text='颜色:').pack(side=tk.LEFT, padx=(8, 2))
+        ttk.Label(self.w_text_frame, text=self._t('color')).pack(side=tk.LEFT, padx=(8, 2))
         ttk.Entry(self.w_text_frame, textvariable=self.w_color, width=8).pack(side=tk.LEFT)
         ttk.Label(self.w_text_frame, text='(#HEX)', foreground='#6c7086').pack(side=tk.LEFT, padx=2)
 
@@ -361,19 +396,19 @@ class ImgBatchApp:
         ttk.Entry(self.w_img_frame, textvariable=self.w_image_path, width=30).pack(side=tk.LEFT, padx=4)
         ttk.Button(self.w_img_frame, text='Browse',
                    command=lambda: self._browse_img(self.w_image_path)).pack(side=tk.LEFT)
-        ttk.Label(self.w_img_frame, text='缩放%:').pack(side=tk.LEFT, padx=(8, 2))
+        ttk.Label(self.w_img_frame, text=self._t('scale_pct')).pack(side=tk.LEFT, padx=(8, 2))
         tk.Spinbox(self.w_img_frame, from_=5, to=100, textvariable=self.w_img_scale, width=4, bg=ENTRY_BG, fg=FG, insertbackground=FG, highlightthickness=0, borderwidth=0).pack(side=tk.LEFT)
 
         # 通用参数
         r2 = ttk.Frame(f); r2.pack(fill=tk.X, pady=2)
-        ttk.Label(r2, text='透明度:', width=10).pack(side=tk.LEFT)
+        ttk.Label(r2, text=self._t('opacity'), width=10).pack(side=tk.LEFT)
         ttk.Scale(r2, from_=10, to=100, variable=self.w_opacity).pack(side=tk.LEFT, fill=tk.X, expand=True)
         self.w_op_lbl = ttk.Label(r2, text='50%', width=4); self.w_op_lbl.pack(side=tk.LEFT, padx=4)
         self.w_opacity.trace_add('write', lambda *a: self.w_op_lbl.config(
             text=f'{self.w_opacity.get()}%'))
 
         r3 = ttk.Frame(f); r3.pack(fill=tk.X, pady=2)
-        ttk.Label(r3, text='位置:', width=10).pack(side=tk.LEFT)
+        ttk.Label(r3, text=self._t('position'), width=10).pack(side=tk.LEFT)
         positions = [('左上', 'top-left'), ('右上', 'top-right'), ('居中', 'center'),
                      ('左下', 'bottom-left'), ('右下', 'bottom-right')]
         for txt, val in positions:
@@ -382,16 +417,16 @@ class ImgBatchApp:
 
         # 输出
         r4 = ttk.Frame(f); r4.pack(fill=tk.X, pady=4)
-        ttk.Radiobutton(r4, text='替换原文件', variable=self.w_replace, value=True,
+        ttk.Radiobutton(r4, text=self._t('replace_orig'), variable=self.w_replace, value=True,
                         command=lambda: self._toggle_out(self.w_replace, self.wm_outrow, self.w_outfolder)).pack(side=tk.LEFT)
-        ttk.Radiobutton(r4, text='输出到:', variable=self.w_replace, value=False,
+        ttk.Radiobutton(r4, text=self._t('output_to'), variable=self.w_replace, value=False,
                         command=lambda: self._toggle_out(self.w_replace, self.wm_outrow, self.w_outfolder)).pack(side=tk.LEFT, padx=10)
         self.wm_outrow = ttk.Frame(r4)
         ttk.Entry(self.wm_outrow, textvariable=self.w_outfolder, width=40).pack(side=tk.LEFT, padx=4)
         ttk.Button(self.wm_outrow, text='Browse', command=lambda: self._browse_out(self.w_outfolder)).pack(side=tk.LEFT)
 
         r5 = ttk.Frame(f); r5.pack(fill=tk.X, pady=6)
-        ttk.Checkbutton(r5, text='启用备份', variable=self.w_backup).pack(side=tk.LEFT)
+        ttk.Checkbutton(r5, text=self._t('enable_backup'), variable=self.w_backup).pack(side=tk.LEFT)
         ttk.Button(r5, text='水印', command=self._run_watermark).pack(side=tk.RIGHT, ipadx=8)
 
         self.w_img_frame.pack_forget()
@@ -408,7 +443,7 @@ class ImgBatchApp:
 
     def _tab_ai_rename(self):
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text=' AI Rename ')
+        self.notebook.add(tab, text=' ' + self._t('tab_airename') + ' ')
 
         f = ttk.Frame(tab)
         f.pack(fill=tk.BOTH, expand=True, padx=10, pady=8)
@@ -417,7 +452,7 @@ class ImgBatchApp:
         r1 = ttk.Frame(f); r1.pack(fill=tk.X, pady=2)
         ttk.Label(r1, text='DeepSeek API Key:', width=14).pack(side=tk.LEFT)
         ttk.Entry(r1, textvariable=self.ai_api_key, width=50, show='*').pack(side=tk.LEFT, padx=4, fill=tk.X, expand=True)
-        ttk.Button(r1, text='显示/隐藏', command=lambda: self._toggle_key_show(r1)).pack(side=tk.LEFT)
+        ttk.Button(r1, text=self._t('show_hide'), command=lambda: self._toggle_key_show(r1)).pack(side=tk.LEFT)
 
         # Prompt
         r2 = ttk.Frame(f); r2.pack(fill=tk.X, pady=4)
@@ -429,18 +464,18 @@ class ImgBatchApp:
 
         # 按钮
         r3 = ttk.Frame(f); r3.pack(fill=tk.X, pady=6)
-        ttk.Button(r3, text='AI 分析文件名', command=self._ai_analyze).pack(side=tk.LEFT, ipadx=8)
-        ttk.Button(r3, text='应用 AI 重命名', command=self._ai_apply).pack(side=tk.RIGHT, ipadx=8)
-        ttk.Button(r3, text='清除结果', command=self._ai_clear).pack(side=tk.RIGHT, padx=8)
+        ttk.Button(r3, text=self._t('ai_analyze'), command=self._ai_analyze).pack(side=tk.LEFT, ipadx=8)
+        ttk.Button(r3, text=self._t('apply_ai'), command=self._ai_apply).pack(side=tk.RIGHT, ipadx=8)
+        ttk.Button(r3, text=self._t('clear_results'), command=self._ai_clear).pack(side=tk.RIGHT, padx=8)
 
         # 结果预览
-        ttk.Label(f, text='AI 建议预览:').pack(anchor=tk.W, pady=(6, 2))
+        ttk.Label(f, text=self._t('ai_preview')).pack(anchor=tk.W, pady=(6, 2))
         tree_fr = ttk.Frame(f)
         tree_fr.pack(fill=tk.BOTH, expand=True)
         self.ai_tree = ttk.Treeview(tree_fr, columns=('original', 'suggested'),
                                      show='headings', height=6)
-        self.ai_tree.heading('original', text='原文件名')
-        self.ai_tree.heading('suggested', text='AI 建议名')
+        self.ai_tree.heading('original', text=self._t('orig_name'))
+        self.ai_tree.heading('suggested', text=self._t('ai_suggested'))
         self.ai_tree.column('original', width=320, minwidth=150)
         self.ai_tree.column('suggested', width=320, minwidth=150)
         ai_vsb = ttk.Scrollbar(tree_fr, orient=tk.VERTICAL, command=self.ai_tree.yview)
@@ -457,7 +492,7 @@ class ImgBatchApp:
 
     def _tab_single(self):
         tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text=' Single ')
+        self.notebook.add(tab, text=' ' + self._t('tab_single') + ' ')
 
         f = ttk.Frame(tab)
         f.pack(fill=tk.BOTH, expand=True, padx=10, pady=8)
@@ -466,11 +501,11 @@ class ImgBatchApp:
         left = ttk.Frame(f)
         left.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
-        ttk.Label(left, text='预览:', font=('Tahoma', 9, 'bold')).pack(anchor=tk.W)
+        ttk.Label(left, text=self._t('preview_colon'), font=('Tahoma', 9, 'bold')).pack(anchor=tk.W)
         self.single_canvas = tk.Canvas(left, width=300, height=280, bg='#FFFFFF',
                                         relief=tk.SUNKEN, borderwidth=2)
         self.single_canvas.pack(fill=tk.BOTH, expand=True, pady=4)
-        self.single_canvas.create_text(150, 140, text='未加载图片',
+        self.single_canvas.create_text(150, 140, text=self._t('no_image'),
                                        fill='#888888', font=('Tahoma', 10), tags='placeholder')
 
         # Info line
@@ -484,19 +519,19 @@ class ImgBatchApp:
 
         # Load
         r0 = ttk.Frame(right); r0.pack(fill=tk.X, pady=2)
-        ttk.Button(r0, text='打开图片...', command=self._single_open).pack(fill=tk.X)
+        ttk.Button(r0, text=self._t('open_image_btn'), command=self._single_open).pack(fill=tk.X)
 
         ttk.Separator(right, orient=tk.HORIZONTAL).pack(fill=tk.X, pady=6)
 
         # Quick Compress
-        ttk.Label(right, text='快速压缩', font=('Tahoma', 9, 'bold')).pack(anchor=tk.W)
+        ttk.Label(right, text=self._t('quick_compress'), font=('Tahoma', 9, 'bold')).pack(anchor=tk.W)
         sf1 = ttk.Frame(right); sf1.pack(fill=tk.X, pady=2)
-        ttk.Label(sf1, text='质量:').pack(side=tk.LEFT)
+        ttk.Label(sf1, text=self._t('quality')).pack(side=tk.LEFT)
         self.single_quality = tk.IntVar(value=75)
         ttk.Scale(sf1, from_=1, to=100, variable=self.single_quality,
                   command=lambda v: self._slider_label(v, self.sql)).pack(side=tk.LEFT, fill=tk.X, expand=True, padx=4)
         self.sql = ttk.Label(sf1, text='75%', width=4); self.sql.pack(side=tk.LEFT)
-        ttk.Button(right, text='压缩保存', command=self._single_compress).pack(fill=tk.X, pady=2)
+        ttk.Button(right, text=self._t('compress_save'), command=self._single_compress).pack(fill=tk.X, pady=2)
 
         ttk.Separator(right, orient=tk.HORIZONTAL).pack(fill=tk.X, pady=6)
 
@@ -506,41 +541,41 @@ class ImgBatchApp:
         self.single_fmt = tk.StringVar(value='.png')
         for fmt in ['.jpg', '.png', '.webp', '.bmp', '.tiff']:
             ttk.Radiobutton(sf2, text=fmt, variable=self.single_fmt, value=fmt).pack(side=tk.LEFT, padx=2)
-        ttk.Button(right, text='转换保存', command=self._single_convert).pack(fill=tk.X, pady=2)
+        ttk.Button(right, text=self._t('convert_save'), command=self._single_convert).pack(fill=tk.X, pady=2)
 
         ttk.Separator(right, orient=tk.HORIZONTAL).pack(fill=tk.X, pady=6)
 
         # Quick Watermark
-        ttk.Label(right, text='快速水印', font=('Tahoma', 9, 'bold')).pack(anchor=tk.W)
+        ttk.Label(right, text=self._t('quick_watermark'), font=('Tahoma', 9, 'bold')).pack(anchor=tk.W)
         sf3 = ttk.Frame(right); sf3.pack(fill=tk.X, pady=2)
         ttk.Label(sf3, text='Text:').pack(side=tk.LEFT)
         self.single_wm = tk.StringVar(value='水印')
         ttk.Entry(sf3, textvariable=self.single_wm, width=15).pack(side=tk.LEFT, fill=tk.X, expand=True, padx=4)
-        ttk.Button(right, text='水印保存', command=self._single_watermark).pack(fill=tk.X, pady=2)
+        ttk.Button(right, text=self._t('wm_save'), command=self._single_watermark).pack(fill=tk.X, pady=2)
 
         # Save As
         ttk.Separator(right, orient=tk.HORIZONTAL).pack(fill=tk.X, pady=6)
-        ttk.Button(right, text='另存为...', command=self._single_saveas).pack(fill=tk.X, pady=2)
+        ttk.Button(right, text=self._t('save_as_btn'), command=self._single_saveas).pack(fill=tk.X, pady=2)
 
         self.single_path = ''
         self.single_img = None
 
     def _single_open(self):
         path = filedialog.askopenfilename(
-            title='Open Image',
+            title=self._t('open_image_fd'),
             filetypes=[('Images', '*.png *.jpg *.jpeg *.webp *.bmp *.tiff *.gif *.ico')])
         if path:
             self._single_load(path)
 
     def _open_single(self):
         path = filedialog.askopenfilename(
-            title='Open Image',
+            title=self._t('open_image_fd'),
             filetypes=[('Images', '*.png *.jpg *.jpeg *.webp *.bmp *.tiff *.gif *.ico')])
         if not path:
             return
         # Switch to Single tab and load
         for i, tab_id in enumerate(self.notebook.tabs()):
-            if self.notebook.tab(tab_id, 'text') == ' 单张处理 ':
+            if self.notebook.tab(tab_id, 'text') == ' ' + self._t('tab_single') + ' ':
                 self.notebook.select(tab_id)
                 break
         self._single_load(path)
@@ -564,7 +599,7 @@ class ImgBatchApp:
                     f'Format: {self.single_img.format}')
             self.single_info.config(text=info)
         except Exception as e:
-            messagebox.showerror('错误', f'Failed to open image: {e}')
+            messagebox.showerror(self._t('error'), f'Failed to open image: {e}')
 
     def _make_thumbnail(self, img, max_w, max_h):
         w, h = img.size
@@ -576,7 +611,7 @@ class ImgBatchApp:
 
     def _single_compress(self):
         if not self.single_img:
-            messagebox.showwarning('提示', '请先打开图片')
+            messagebox.showwarning(self._t('notice'), '请先打开图片')
             return
         path = self.single_path
         quality = int(float(self.single_quality.get()))
@@ -590,14 +625,14 @@ class ImgBatchApp:
             img.save(out, **kw)
             before = self._fmt_size(os.path.getsize(path))
             after = self._fmt_size(os.path.getsize(out))
-            messagebox.showinfo('完成', f'Compressed: {before} -> {after}')
+            messagebox.showinfo(self._t('done'), f'Compressed: {before} -> {after}')
             self._single_open()
         except Exception as e:
-            messagebox.showerror('错误', str(e))
+            messagebox.showerror(self._t('error'), str(e))
 
     def _single_convert(self):
         if not self.single_img:
-            messagebox.showwarning('提示', '请先打开图片')
+            messagebox.showwarning(self._t('notice'), '请先打开图片')
             return
         target = self.single_fmt.get()
         base = os.path.splitext(self.single_path)[0]
@@ -611,13 +646,13 @@ class ImgBatchApp:
                 rgb.paste(img, mask=img.split()[-1] if img.mode == 'RGBA' else None)
                 img = rgb
             img.save(out, optimize=True)
-            messagebox.showinfo('完成', f'Converted to {target}')
+            messagebox.showinfo(self._t('done'), f'Converted to {target}')
         except Exception as e:
-            messagebox.showerror('错误', str(e))
+            messagebox.showerror(self._t('error'), str(e))
 
     def _single_watermark(self):
         if not self.single_img:
-            messagebox.showwarning('提示', '请先打开图片')
+            messagebox.showwarning(self._t('notice'), '请先打开图片')
             return
         text = self.single_wm.get()
         if not text:
@@ -637,14 +672,14 @@ class ImgBatchApp:
             draw.text((x, y), text, fill=(255, 255, 255, 128), font=font)
             result = Image.alpha_composite(img, layer)
             result.save(self.single_path, optimize=True)
-            messagebox.showinfo('完成', '水印已添加')
+            messagebox.showinfo(self._t('done'), '水印已添加')
             self._single_open()
         except Exception as e:
-            messagebox.showerror('错误', str(e))
+            messagebox.showerror(self._t('error'), str(e))
 
     def _single_saveas(self):
         if not self.single_img:
-            messagebox.showwarning('提示', '请先打开图片')
+            messagebox.showwarning(self._t('notice'), '请先打开图片')
             return
         path = filedialog.asksaveasfilename(
             title='Save As',
@@ -656,25 +691,25 @@ class ImgBatchApp:
         try:
             self.single_img.save(path, optimize=True)
             self.single_path = path
-            messagebox.showinfo('完成', f'Saved to:\n{path}')
+            messagebox.showinfo(self._t('done'), f'Saved to:\n{path}')
         except Exception as e:
-            messagebox.showerror('错误', str(e))
+            messagebox.showerror(self._t('error'), str(e))
 
     # ═══════════════════════ 通用工具方法 ═══════════════════════
 
     def _browse(self):
-        path = filedialog.askdirectory(title='选择图片文件夹')
+        path = filedialog.askdirectory(title=self._t('sel_img_folder'))
         if path:
             self.folder.set(os.path.normpath(path))
             self._refresh()
 
     def _browse_out(self, var):
-        path = filedialog.askdirectory(title='选择输出文件夹')
+        path = filedialog.askdirectory(title=self._t('sel_out_folder'))
         if path:
             var.set(os.path.normpath(path))
 
     def _browse_img(self, var):
-        path = filedialog.askopenfilename(title='选择水印图片',
+        path = filedialog.askopenfilename(title=self._t('sel_wm_img'),
                                           filetypes=[('图片', '*.png *.jpg *.jpeg *.webp *.bmp')])
         if path:
             var.set(os.path.normpath(path))
@@ -740,7 +775,7 @@ class ImgBatchApp:
             try:
                 Image.open(path).show()
             except Exception as e:
-                messagebox.showerror('预览失败', str(e))
+                messagebox.showerror(self._t('preview_failed'), str(e))
 
     def _backup_mgr(self):
         folder = self.folder.get()
@@ -748,7 +783,7 @@ class ImgBatchApp:
             return
         backups = self._find_backups(folder)
         if not backups:
-            messagebox.showinfo('备份管理', '暂无备份记录')
+            messagebox.showinfo(self._t('backup_mgr'), '暂无备份记录')
             return
         dialog = BackupDialog(self.root, backups, folder)
         self.root.wait_window(dialog.top)
@@ -779,7 +814,7 @@ class ImgBatchApp:
         return backup_dir
 
     def _do_restore(self, backup_dir, folder):
-        if not messagebox.askyesno('确认恢复', f'This will overwrite current folder from backup:\n{os.path.basename(backup_dir)}\n\nConfirm？'):
+        if not messagebox.askyesno(self._t('confirm_restore'), f'This will overwrite current folder from backup:\n{os.path.basename(backup_dir)}\n\nConfirm？'):
             return
         for f in os.listdir(backup_dir):
             src = os.path.join(backup_dir, f)
@@ -787,14 +822,14 @@ class ImgBatchApp:
             if os.path.isfile(src):
                 shutil.copy2(src, dst)
         self._refresh()
-        messagebox.showinfo('恢复完成', '备份已恢复')
+        messagebox.showinfo(self._t('restore_done'), '备份已恢复')
 
     def _do_clear_backups(self, backups):
-        if not messagebox.askyesno('确认', f'将删除 {len(backups)}  个备份，不可撤销。Confirm？'):
+        if not messagebox.askyesno(self._t('confirm'), f'将删除 {len(backups)}  个备份，不可撤销。Confirm？'):
             return
         for d in backups:
             shutil.rmtree(d)
-        messagebox.showinfo('完成', f'Cleared {len(backups)}  个备份')
+        messagebox.showinfo(self._t('done'), f'Cleared {len(backups)}  个备份')
 
     # ═══════════════════════ Compress执行 ═══════════════════════
 
@@ -803,7 +838,7 @@ class ImgBatchApp:
             return
         folder = self.folder.get()
         if not folder or not self.file_data:
-            messagebox.showwarning('提示', '请先选择文件夹并刷新')
+            messagebox.showwarning(self._t('notice'), '请先选择文件夹并刷新')
             return
         self.is_running = True
         file_list = [d['name'] for d in self.file_data]
@@ -879,7 +914,7 @@ class ImgBatchApp:
             return
         folder = self.folder.get()
         if not folder or not self.file_data:
-            messagebox.showwarning('提示', '请先选择文件夹并刷新')
+            messagebox.showwarning(self._t('notice'), '请先选择文件夹并刷新')
             return
         self.is_running = True
         file_list = [d['name'] for d in self.file_data]
@@ -953,7 +988,7 @@ class ImgBatchApp:
     def _preview_rename(self):
         mapping = self._gen_rename_map()
         if not mapping:
-            messagebox.showwarning('提示', '无匹配文件')
+            messagebox.showwarning(self._t('notice'), '无匹配文件')
             return
         msgs = []
         for old, new in list(mapping.items())[:20]:
@@ -1005,7 +1040,7 @@ class ImgBatchApp:
         folder = self.folder.get()
         mapping = self._gen_rename_map()
         if not mapping:
-            messagebox.showwarning('提示', '没有需要重命名的文件')
+            messagebox.showwarning(self._t('notice'), '没有需要重命名的文件')
             return
         if not messagebox.askyesno('Confirm Rename', f'Will rename {len(mapping)} 个文件，Confirm？'):
             return
@@ -1032,10 +1067,10 @@ class ImgBatchApp:
         self.root.after(0, self._clear_highlight)
         if 个错误:
             self._set_status(f'Done，{len(errors)}  个错误')
-            self.root.after(100, lambda: messagebox.showerror('错误', '\n'.join(errors[:10])))
+            self.root.after(100, lambda: messagebox.showerror(self._t('error'), '\n'.join(errors[:10])))
         else:
             self._set_status('Rename Done')
-            self.root.after(100, lambda: messagebox.showinfo('完成', f'{total}  个文件已重命名'))
+            self.root.after(100, lambda: messagebox.showinfo(self._t('done'), f'{total}  个文件已重命名'))
         self.root.after(50, self._refresh)
         self.is_running = False
 
@@ -1046,14 +1081,14 @@ class ImgBatchApp:
             return
         folder = self.folder.get()
         if not folder or not self.file_data:
-            messagebox.showwarning('提示', '请先选择文件夹并刷新')
+            messagebox.showwarning(self._t('notice'), '请先选择文件夹并刷新')
             return
         wtype = self.w_type.get()
         if wtype == 'image' and not self.w_image_path.get():
-            messagebox.showwarning('提示', 'Please select watermark image')
+            messagebox.showwarning(self._t('notice'), 'Please select watermark image')
             return
         if wtype == 'image' and not os.path.exists(self.w_image_path.get()):
-            messagebox.showwarning('提示', 'Watermark image not found')
+            messagebox.showwarning(self._t('notice'), 'Watermark image not found')
             return
         self.is_running = True
         file_list = [d['name'] for d in self.file_data]
@@ -1180,11 +1215,11 @@ class ImgBatchApp:
     def _ai_analyze(self):
         folder = self.folder.get()
         if not folder or not self.file_data:
-            messagebox.showwarning('提示', '请先选择文件夹并刷新')
+            messagebox.showwarning(self._t('notice'), '请先选择文件夹并刷新')
             return
         api_key = self.ai_api_key.get().strip()
         if not api_key:
-            messagebox.showwarning('提示', '请输入 DeepSeek API Key')
+            messagebox.showwarning(self._t('notice'), '请输入 DeepSeek API Key')
             return
         self.ai_result.clear()
         self.ai_tree.delete(*self.ai_tree.get_children())
@@ -1307,7 +1342,7 @@ class ImgBatchApp:
 
     def _ai_apply(self):
         if not self.ai_result:
-            messagebox.showwarning('提示', '请先运行 AI 分析')
+            messagebox.showwarning(self._t('notice'), '请先运行 AI 分析')
             return
         folder = self.folder.get()
         mapping = {}
@@ -1327,9 +1362,9 @@ class ImgBatchApp:
                     new_name = f"{os.path.splitext(new_name)[0]}_{len(mapping)}{orig_ext}"
                 mapping[orig] = new_name
         if not mapping:
-            messagebox.showinfo('提示', '没有需要重命名的文件')
+            messagebox.showinfo(self._t('notice'), '没有需要重命名的文件')
             return
-        if not messagebox.askyesno('确认', f'AI rename {len(mapping)} 个文件，Confirm？'):
+        if not messagebox.askyesno(self._t('confirm'), f'AI rename {len(mapping)} 个文件，Confirm？'):
             return
         个错误 = []
         for old, new in mapping.items():
@@ -1339,9 +1374,9 @@ class ImgBatchApp:
                 个错误.append(f'{old} → {new}: {e}')
         self._refresh()
         if 个错误:
-            messagebox.showerror('错误', '\n'.join(errors[:10]))
+            messagebox.showerror(self._t('error'), '\n'.join(errors[:10]))
         else:
-            messagebox.showinfo('完成', f'{len(mapping)}  个文件已重命名')
+            messagebox.showinfo(self._t('done'), f'{len(mapping)}  个文件已重命名')
 
     def _ai_clear(self):
         self.ai_result.clear()
