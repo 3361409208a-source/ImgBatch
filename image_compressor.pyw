@@ -622,11 +622,12 @@ class ImgBatchApp:
             kw = {'optimize': True}
             if ext in QUALITY_FORMATS:
                 kw['quality'] = quality
+            before_sz = os.path.getsize(path)
             img.save(out, **kw)
-            before = self._fmt_size(os.path.getsize(path))
+            before = self._fmt_size(before_sz)
             after = self._fmt_size(os.path.getsize(out))
             messagebox.showinfo(self._t('done'), f'Compressed: {before} -> {after}')
-            self._single_open()
+            self._single_load(path)
         except Exception as e:
             messagebox.showerror(self._t('error'), str(e))
 
@@ -671,9 +672,11 @@ class ImgBatchApp:
             y = img.height - th - 15
             draw.text((x, y), text, fill=(255, 255, 255, 128), font=font)
             result = Image.alpha_composite(img, layer)
+            if self.single_img.mode != 'RGBA':
+                result = result.convert('RGB')
             result.save(self.single_path, optimize=True)
             messagebox.showinfo(self._t('done'), '水印已添加')
-            self._single_open()
+            self._single_load(self.single_path)
         except Exception as e:
             messagebox.showerror(self._t('error'), str(e))
 
@@ -1066,8 +1069,8 @@ class ImgBatchApp:
         self.root.after(0, self._stop_spinner)
         self.root.after(0, self._clear_highlight)
         if 个错误:
-            self._set_status(f'Done，{len(errors)}  个错误')
-            self.root.after(100, lambda: messagebox.showerror(self._t('error'), '\n'.join(errors[:10])))
+            self._set_status(f'Done，{len(个错误)}  个错误')
+            self.root.after(100, lambda errs=个错误[:]: messagebox.showerror(self._t('error'), '\n'.join(errs[:10])))
         else:
             self._set_status('Rename Done')
             self.root.after(100, lambda: messagebox.showinfo(self._t('done'), f'{total}  个文件已重命名'))
@@ -1374,7 +1377,7 @@ class ImgBatchApp:
                 个错误.append(f'{old} → {new}: {e}')
         self._refresh()
         if 个错误:
-            messagebox.showerror(self._t('error'), '\n'.join(errors[:10]))
+            messagebox.showerror(self._t('error'), '\n'.join(个错误[:10]))
         else:
             messagebox.showinfo(self._t('done'), f'{len(mapping)}  个文件已重命名')
 
@@ -1489,8 +1492,8 @@ class ImgBatchApp:
         if post_refresh:
             self.root.after(100, self._refresh)
         if 个错误:
-            self.root.after(200, lambda: messagebox.showwarning(
-                f'{op_name}Done', f'{msg}\n\n{len(errors)}  个错误:\n' + '\n'.join(errors[:5])))
+            self.root.after(200, lambda errs=个错误[:]: messagebox.showwarning(
+                f'{op_name}Done', f'{msg}\n\n{len(errs)}  个错误:\n' + '\n'.join(errs[:5])))
 
     # ═══════════════════════ XP Classic Theme ═══════════════════════
 
