@@ -84,7 +84,7 @@ ENTRY_BG = '#FFFFFF'
 
 class ImgBatchApp:
 
-    TRANSLATIONS = {'zh': {'tab_compress': '压缩', 'tab_format': '格式转换', 'tab_rename': '重命名', 'tab_watermark': '水印', 'tab_airename': 'AI重命名', 'app_title': 'ImgBatch -- 图片批量处理工具', 'target_folder': '目标文件夹:', 'browse': '浏览...', 'refresh': '刷新', 'open_image': '打开图片', 'file_list': '文件列表（双击预览）', 'col_name': '文件名', 'col_size': '大小', 'col_dim': '尺寸', 'col_fmt': '格式', 'quality': '质量:', 'resize': '缩放:', 'replace_orig': '替换原文件', 'output_to': '输出到:', 'enable_backup': '启用备份', 'start_compress': '开始压缩', 'backup_mgr': '备份管理', 'to_format': '转为格式:', 'start_convert': '开始转换', 'mode': '模式:', 'prefix_mode': '添加前缀', 'suffix_mode': '添加后缀', 'replace_mode': '查找替换', 'seq_mode': '序号模板', 'case_mode': '大小写转换', 'prefix': '前缀:', 'suffix': '后缀:', 'find': '查找:', 'replace_to': '替换为:', 'template': '模板:', 'start': '起始:', 'digits': '位数:', 'num_seq': '{num}=序号', 'lowercase': '全小写', 'uppercase': '全大写', 'preview_rename': '预览重命名', 'run_rename': '执行重命名', 'wm_type': '水印类型:', 'text_type': '文字', 'image_type': '图片', 'content': '内容:', 'font_size': '字号:', 'color': '颜色:', 'scale_pct': '缩放%:', 'opacity': '透明度:', 'position': '位置:', 'top_left': '左上', 'top_right': '右上', 'center': '居中', 'bottom_left': '左下', 'bottom_right': '右下', 'batch_wm': '批量加水印', 'show_hide': '显示/隐藏', 'prompt': '提示词 Prompt:', 'ai_analyze': 'AI 分析文件名', 'apply_ai': '应用 AI 重命名', 'clear_results': '清除结果', 'ai_preview': 'AI 建议预览:', 'orig_name': '原文件名', 'ai_suggested': 'AI 建议名', 'ready': '就绪', 'error': '错误', 'notice': '提示', 'confirm': '确认', 'done': '完成', 'preview_failed': '预览失败', 'confirm_restore': '确认恢复', 'restore_done': '恢复完成', 'sel_img_folder': '选择图片文件夹', 'sel_out_folder': '选择输出文件夹', 'sel_wm_img': '选择水印图片', 'open_image_fd': 'Open Image', 'save_as': 'Save As', 'hidden_default': '默认隐藏', 'ai_loading_anim': '动画更新 AI 树中的加载提示', 'cleared_ai': '已清除 AI 结果', 'illegal_chars': '文件名中的非法字符', 'total': '共: ', 'save': '保存', 'saved': '节省', 'compress_preview': '预计大小', 'compress_preview_none': '预计大小: —', 'compress_ratio': '压缩比例', 'preview': '预览', 'no_preview': '选择图片预览', 'also_convert': '同时转换格式', 'also_rename': '同时重命名', 'also_watermark': '同时加水印', 'save_as_btn': '另存为...', 'all_files': '所有文件', 'drop_invalid': '拖入的文件不是支持的图片格式', 'mode_folder': '文件夹模式', 'mode_single': '单张模式', 'clear_single': '清除单张', 'target_image': '目标图片:'}, 'en': {'tab_compress': 'Compress', 'tab_format': 'Format', 'tab_rename': 'Rename', 'tab_watermark': 'Watermark', 'tab_airename': 'AI Rename', 'app_title': 'ImgBatch -- Batch Image Processor', 'target_folder': 'Target Folder:', 'browse': 'Browse...', 'refresh': 'Refresh', 'open_image': 'Open Image', 'file_list': 'File List (dbl-click preview)', 'col_name': 'Name', 'col_size': 'Size', 'col_dim': 'Dimensions', 'col_fmt': 'Format', 'quality': 'Quality:', 'resize': 'Resize:', 'replace_orig': 'Replace Original', 'output_to': 'Output to:', 'enable_backup': 'Enable Backup', 'start_compress': 'Start Compress', 'backup_mgr': 'Backup Manager', 'to_format': 'To Format:', 'start_convert': 'Start Convert', 'mode': 'Mode:', 'prefix_mode': 'Prefix', 'suffix_mode': 'Suffix', 'replace_mode': 'Replace', 'seq_mode': 'Sequence', 'case_mode': 'Case', 'prefix': 'Prefix:', 'suffix': 'Suffix:', 'find': 'Find:', 'replace_to': 'Replace:', 'template': 'Template:', 'start': 'Start:', 'digits': 'Digits:', 'num_seq': '{num}=number', 'lowercase': 'lowercase', 'uppercase': 'UPPERCASE', 'preview_rename': 'Preview Rename', 'run_rename': 'Run Rename', 'wm_type': 'Watermark Type:', 'text_type': 'Text', 'image_type': 'Image', 'content': 'Content:', 'font_size': 'Font Size:', 'color': 'Color:', 'scale_pct': 'Scale %:', 'opacity': 'Opacity:', 'position': 'Position:', 'top_left': 'Top L', 'top_right': 'Top R', 'center': 'Center', 'bottom_left': 'Bot L', 'bottom_right': 'Bot R', 'batch_wm': 'Batch Watermark', 'show_hide': 'Show/Hide', 'prompt': 'Prompt:', 'ai_analyze': 'AI Analyze', 'apply_ai': 'Apply AI Names', 'clear_results': 'Clear Results', 'ai_preview': 'AI Preview:', 'orig_name': 'Original', 'ai_suggested': 'AI Suggested', 'ready': 'Ready', 'error': 'Error', 'notice': 'Notice', 'confirm': 'Confirm', 'done': 'Done', 'preview_failed': 'Preview Failed', 'confirm_restore': 'Confirm Restore', 'restore_done': 'Restore Done', 'sel_img_folder': 'Select Image Folder', 'sel_out_folder': 'Select Output Folder', 'sel_wm_img': 'Select Watermark Image', 'open_image_fd': 'Open Image', 'save_as': 'Save As', 'hidden_default': 'Hidden by default', 'ai_loading_anim': 'AI loading animation', 'cleared_ai': 'Cleared AI results', 'illegal_chars': 'Illegal chars in filename', 'total': 'Total: ', 'save': 'Save', 'saved': 'saved', 'compress_preview': 'Estimated', 'compress_preview_none': 'Estimated: —', 'compress_ratio': 'Compress Ratio', 'preview': 'Preview', 'no_preview': 'Select image to preview', 'also_convert': 'Also Convert', 'also_rename': 'Also Rename', 'also_watermark': 'Also Watermark', 'save_as_btn': 'Save As...', 'all_files': 'All Files', 'drop_invalid': 'Dropped file is not a supported image', 'mode_folder': 'Folder Mode', 'mode_single': 'Single Mode', 'clear_single': 'Clear Single', 'target_image': 'Target Image:'}}
+    TRANSLATIONS = {'zh': {'tab_compress': '压缩', 'tab_format': '格式转换', 'tab_rename': '重命名', 'tab_watermark': '水印', 'tab_airename': 'AI重命名', 'app_title': 'ImgBatch -- 图片批量处理工具', 'target_folder': '目标文件夹:', 'browse': '浏览...', 'refresh': '刷新', 'open_image': '选择图片', 'file_list': '文件列表（双击预览）', 'col_name': '文件名', 'col_size': '大小', 'col_dim': '尺寸', 'col_fmt': '格式', 'quality': '质量:', 'resize': '缩放:', 'replace_orig': '替换原文件', 'output_to': '输出到:', 'enable_backup': '启用备份', 'start_compress': '开始压缩', 'backup_mgr': '备份管理', 'to_format': '转为格式:', 'start_convert': '开始转换', 'mode': '模式:', 'prefix_mode': '添加前缀', 'suffix_mode': '添加后缀', 'replace_mode': '查找替换', 'seq_mode': '序号模板', 'case_mode': '大小写转换', 'prefix': '前缀:', 'suffix': '后缀:', 'find': '查找:', 'replace_to': '替换为:', 'template': '模板:', 'start': '起始:', 'digits': '位数:', 'num_seq': '{num}=序号', 'lowercase': '全小写', 'uppercase': '全大写', 'preview_rename': '预览重命名', 'run_rename': '执行重命名', 'wm_type': '水印类型:', 'text_type': '文字', 'image_type': '图片', 'content': '内容:', 'font_size': '字号:', 'color': '颜色:', 'scale_pct': '缩放%:', 'opacity': '透明度:', 'position': '位置:', 'top_left': '左上', 'top_right': '右上', 'center': '居中', 'bottom_left': '左下', 'bottom_right': '右下', 'batch_wm': '批量加水印', 'show_hide': '显示/隐藏', 'prompt': '提示词 Prompt:', 'ai_analyze': 'AI 分析文件名', 'apply_ai': '应用 AI 重命名', 'clear_results': '清除结果', 'ai_preview': 'AI 建议预览:', 'orig_name': '原文件名', 'ai_suggested': 'AI 建议名', 'ready': '就绪', 'error': '错误', 'notice': '提示', 'confirm': '确认', 'done': '完成', 'preview_failed': '预览失败', 'confirm_restore': '确认恢复', 'restore_done': '恢复完成', 'sel_img_folder': '选择图片文件夹', 'sel_out_folder': '选择输出文件夹', 'sel_wm_img': '选择水印图片', 'open_image_fd': 'Open Image', 'save_as': 'Save As', 'hidden_default': '默认隐藏', 'ai_loading_anim': '动画更新 AI 树中的加载提示', 'cleared_ai': '已清除 AI 结果', 'illegal_chars': '文件名中的非法字符', 'total': '共: ', 'save': '保存', 'saved': '节省', 'compress_preview': '预计大小', 'compress_preview_none': '预计大小: —', 'compress_ratio': '压缩比例', 'preview': '预览', 'no_preview': '选择图片预览', 'also_convert': '同时转换格式', 'also_rename': '同时重命名', 'also_watermark': '同时加水印', 'save_as_btn': '另存为...', 'all_files': '所有文件', 'drop_invalid': '拖入的文件不是支持的图片格式', 'mode_folder': '文件夹模式', 'mode_single': '单张模式', 'clear_single': '清除单张', 'mode_multi': '多图模式', 'clear_multi': '清除多图', 'target_image': '目标图片:', 'tab_trim': '裁剪透明', 'trim_title': '裁剪透明边距', 'padding': '边距:', 'start_trim': '开始裁剪', 'tab_inspect': '检查', 'tab_normalize': '规范化', 'start_inspect': '开始检查', 'alpha_threshold': 'Alpha阈值:', 'target_height': '目标高度:', 'norm_padding': '边距:', 'start_normalize': '开始规范化'}, 'en': {'tab_compress': 'Compress', 'tab_format': 'Format', 'tab_rename': 'Rename', 'tab_watermark': 'Watermark', 'tab_airename': 'AI Rename', 'app_title': 'ImgBatch -- Batch Image Processor', 'target_folder': 'Target Folder:', 'browse': 'Browse...', 'refresh': 'Refresh', 'open_image': 'Select Images', 'file_list': 'File List (dbl-click preview)', 'col_name': 'Name', 'col_size': 'Size', 'col_dim': 'Dimensions', 'col_fmt': 'Format', 'quality': 'Quality:', 'resize': 'Resize:', 'replace_orig': 'Replace Original', 'output_to': 'Output to:', 'enable_backup': 'Enable Backup', 'start_compress': 'Start Compress', 'backup_mgr': 'Backup Manager', 'to_format': 'To Format:', 'start_convert': 'Start Convert', 'mode': 'Mode:', 'prefix_mode': 'Prefix', 'suffix_mode': 'Suffix', 'replace_mode': 'Replace', 'seq_mode': 'Sequence', 'case_mode': 'Case', 'prefix': 'Prefix:', 'suffix': 'Suffix:', 'find': 'Find:', 'replace_to': 'Replace:', 'template': 'Template:', 'start': 'Start:', 'digits': 'Digits:', 'num_seq': '{num}=number', 'lowercase': 'lowercase', 'uppercase': 'UPPERCASE', 'preview_rename': 'Preview Rename', 'run_rename': 'Run Rename', 'wm_type': 'Watermark Type:', 'text_type': 'Text', 'image_type': 'Image', 'content': 'Content:', 'font_size': 'Font Size:', 'color': 'Color:', 'scale_pct': 'Scale %:', 'opacity': 'Opacity:', 'position': 'Position:', 'top_left': 'Top L', 'top_right': 'Top R', 'center': 'Center', 'bottom_left': 'Bot L', 'bottom_right': 'Bot R', 'batch_wm': 'Batch Watermark', 'show_hide': 'Show/Hide', 'prompt': 'Prompt:', 'ai_analyze': 'AI Analyze', 'apply_ai': 'Apply AI Names', 'clear_results': 'Clear Results', 'ai_preview': 'AI Preview:', 'orig_name': 'Original', 'ai_suggested': 'AI Suggested', 'ready': 'Ready', 'error': 'Error', 'notice': 'Notice', 'confirm': 'Confirm', 'done': 'Done', 'preview_failed': 'Preview Failed', 'confirm_restore': 'Confirm Restore', 'restore_done': 'Restore Done', 'sel_img_folder': 'Select Image Folder', 'sel_out_folder': 'Select Output Folder', 'sel_wm_img': 'Select Watermark Image', 'open_image_fd': 'Open Image', 'save_as': 'Save As', 'hidden_default': 'Hidden by default', 'ai_loading_anim': 'AI loading animation', 'cleared_ai': 'Cleared AI results', 'illegal_chars': 'Illegal chars in filename', 'total': 'Total: ', 'save': 'Save', 'saved': 'saved', 'compress_preview': 'Estimated', 'compress_preview_none': 'Estimated: —', 'compress_ratio': 'Compress Ratio', 'preview': 'Preview', 'no_preview': 'Select image to preview', 'also_convert': 'Also Convert', 'also_rename': 'Also Rename', 'also_watermark': 'Also Watermark', 'save_as_btn': 'Save As...', 'all_files': 'All Files', 'drop_invalid': 'Dropped file is not a supported image', 'mode_folder': 'Folder Mode', 'mode_single': 'Single Mode', 'clear_single': 'Clear Single', 'mode_multi': 'Multi Mode', 'clear_multi': 'Clear Multi', 'target_image': 'Target Image:', 'tab_trim': 'Trim Alpha', 'trim_title': 'Trim Transparent Edges', 'padding': 'Padding:', 'start_trim': 'Start Trim', 'tab_inspect': 'Inspect', 'tab_normalize': 'Normalize', 'start_inspect': 'Start Inspect', 'alpha_threshold': 'Alpha Threshold:', 'target_height': 'Target Height:', 'norm_padding': 'Padding:', 'start_normalize': 'Start Normalize'}}
 
     def _t(self, key):
         return self.TRANSLATIONS.get(self.current_lang, {}).get(key, key)
@@ -107,6 +107,9 @@ class ImgBatchApp:
         self._tab_rename()
         self._tab_watermark()
         self._tab_ai_rename()
+        self._tab_trim_title()
+        self._tab_inspect()
+        self._tab_normalize()
         self.notebook.select(0)
         self._update_mode_ui()
         self._schedule_compress_preview()
@@ -124,9 +127,10 @@ class ImgBatchApp:
         self.tree_items = {}
         self.current_lang = 'zh'
 
-        # ── 目标模式：folder / single ──
+        # ── 目标模式：folder / single / multi ──
         self.target_mode = tk.StringVar(value='folder')
         self.single_path = tk.StringVar()
+        self.multi_paths = []
 
         # ── 动画 Animation ──
         self._anim_spinner_angle = 0
@@ -194,6 +198,20 @@ class ImgBatchApp:
         self.ai_prompt = tk.StringVar(value='请分析以下图片文件名列表，为每个文件生成一个简洁规范的英文文件名（含扩展名），格式如：player_name-position-country.jpg。只返回JSON数组，不要其他内容。')
         self.ai_result = {}
 
+        # ── Trim Title ──
+        self.t_padding = tk.IntVar(value=4)
+        self.t_replace = tk.BooleanVar(value=True)
+        self.t_outfolder = tk.StringVar()
+        self.t_backup = tk.BooleanVar(value=True)
+
+        # ── Normalize ──
+        self.n_alpha_threshold = tk.IntVar(value=28)
+        self.n_target_height = tk.IntVar(value=280)
+        self.n_padding = tk.IntVar(value=6)
+        self.n_replace = tk.BooleanVar(value=True)
+        self.n_outfolder = tk.StringVar()
+        self.n_backup = tk.BooleanVar(value=True)
+
         self._build_ui()
         self._apply_dark_theme()
 
@@ -209,13 +227,15 @@ class ImgBatchApp:
         self.folder_entry.pack(side=tk.LEFT, padx=(6, 6), fill=tk.X, expand=True)
         ttk.Button(top, text=self._t('browse'), command=self._browse).pack(side=tk.LEFT)
         ttk.Button(top, text=self._t('refresh'), command=self._refresh).pack(side=tk.LEFT, padx=(6, 0))
-        ttk.Button(top, text=self._t('open_image'), command=self._open_single).pack(side=tk.LEFT, padx=(6, 0))
-        # 模式指示 + 清除单张
+        ttk.Button(top, text=self._t('open_image'), command=self._open_images).pack(side=tk.LEFT, padx=(6, 0))
+        # 模式指示 + 清除
         self.lbl_mode = ttk.Label(top, text=self._t('mode_folder'), font=('Tahoma', 9, 'bold'), foreground=ACCENT)
         self.lbl_mode.pack(side=tk.LEFT, padx=(8, 0))
         self.btn_clear_single = ttk.Button(top, text=self._t('clear_single'), command=self._clear_single_mode)
         self.btn_clear_single.pack(side=tk.LEFT, padx=(4, 0))
         self.btn_clear_single.pack_forget()
+        self.btn_clear_multi = ttk.Button(top, text=self._t('clear_multi'), command=self._clear_multi_mode)
+        self.btn_clear_multi.pack_forget()
         # Language switcher
         lang_fr = ttk.Frame(top)
         lang_fr.pack(side=tk.RIGHT, padx=(10, 0))
@@ -273,6 +293,9 @@ class ImgBatchApp:
         self._tab_rename()
         self._tab_watermark()
         self._tab_ai_rename()
+        self._tab_trim_title()
+        self._tab_inspect()
+        self._tab_normalize()
         self.notebook.bind('<<NotebookTabChanged>>', self._on_tab_changed)
 
         # ── 状态栏 + 动画 ──
@@ -341,12 +364,15 @@ class ImgBatchApp:
         return _CallWindowProc(self._orig_wndproc, hwnd, msg, wparam, lparam)
 
     def _handle_drop(self, files):
-        """拖入文件后的统一处理：进入单张模式并加载第一张图片"""
+        """拖入文件后的统一处理：单张进入单张模式，多张进入多图模式"""
         images = [f for f in files if os.path.splitext(f)[1].lower() in SUPPORTED_EXT]
         if not images:
             messagebox.showwarning(self._t('notice'), self._t('drop_invalid'))
             return
-        self._enter_single_mode(images[0])
+        if len(images) == 1:
+            self._enter_single_mode(images[0])
+        else:
+            self._enter_multi_mode(images)
 
     def _enter_single_mode(self, path):
         """切换到单张目标模式"""
@@ -369,14 +395,26 @@ class ImgBatchApp:
         self._update_mode_ui()
         self._refresh()
 
+    def _clear_multi_mode(self):
+        """退出多图模式，回到文件夹模式"""
+        self.target_mode.set('folder')
+        self.multi_paths.clear()
+        self._update_mode_ui()
+        self._refresh()
+
     def _update_mode_ui(self):
         """根据当前目标模式更新顶部标签和按钮"""
-        if self.target_mode.get() == 'single':
+        mode = self.target_mode.get()
+        self.btn_clear_single.pack_forget()
+        self.btn_clear_multi.pack_forget()
+        if mode == 'single':
             self.lbl_mode.config(text=self._t('mode_single'))
             self.btn_clear_single.pack(side=tk.LEFT, padx=(4, 0))
+        elif mode == 'multi':
+            self.lbl_mode.config(text=self._t('mode_multi'))
+            self.btn_clear_multi.pack(side=tk.LEFT, padx=(4, 0))
         else:
             self.lbl_mode.config(text=self._t('mode_folder'))
-            self.btn_clear_single.pack_forget()
 
     def _on_tab_changed(self, event=None):
         """切换标签页时，若回到压缩页则刷新实时预览"""
@@ -817,18 +855,323 @@ class ImgBatchApp:
         self.ai_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         ai_vsb.pack(side=tk.RIGHT, fill=tk.Y)
 
+    # ═══════════════════════ Tab: 裁剪透明边 ═══════════════════════
+
+    def _tab_trim_title(self):
+        tab = ttk.Frame(self.notebook)
+        self.notebook.add(tab, text=' ' + self._t('tab_trim') + ' ')
+        f = ttk.Frame(tab)
+        f.pack(fill=tk.X, padx=10, pady=8)
+
+        r1 = ttk.Frame(f); r1.pack(fill=tk.X, pady=4)
+        ttk.Label(r1, text=self._t('padding'), width=10).pack(side=tk.LEFT)
+        tk.Spinbox(r1, from_=0, to=50, textvariable=self.t_padding, width=5, bg=ENTRY_BG, fg=FG, insertbackground=FG, highlightthickness=0, borderwidth=0).pack(side=tk.LEFT, padx=4)
+
+        r2 = ttk.Frame(f); r2.pack(fill=tk.X, pady=4)
+        ttk.Radiobutton(r2, text=self._t('replace_orig'), variable=self.t_replace, value=True,
+                        command=lambda: self._toggle_out(self.t_replace, self.t_outrow, self.t_outfolder)).pack(side=tk.LEFT)
+        ttk.Radiobutton(r2, text=self._t('output_to'), variable=self.t_replace, value=False,
+                        command=lambda: self._toggle_out(self.t_replace, self.t_outrow, self.t_outfolder)).pack(side=tk.LEFT, padx=10)
+        self.t_outrow = ttk.Frame(r2)
+        ttk.Entry(self.t_outrow, textvariable=self.t_outfolder, width=40).pack(side=tk.LEFT, padx=4)
+        ttk.Button(self.t_outrow, text='Browse', command=lambda: self._browse_out(self.t_outfolder)).pack(side=tk.LEFT)
+
+        r3 = ttk.Frame(f); r3.pack(fill=tk.X, pady=6)
+        ttk.Checkbutton(r3, text=self._t('enable_backup'), variable=self.t_backup).pack(side=tk.LEFT)
+        ttk.Button(r3, text=self._t('start_trim'), command=self._run_trim_title).pack(side=tk.RIGHT, ipadx=8)
+
+    # ═══════════════════════ Trim Title 执行 ═══════════════════════
+
+    def _run_trim_title(self):
+        if self.is_running:
+            return
+        folder = self.folder.get()
+        if not folder or not self.file_data:
+            messagebox.showwarning(self._t('notice'), '请先选择文件夹并刷新')
+            return
+        self.is_running = True
+        file_list = [d['name'] for d in self.file_data]
+        padding = self.t_padding.get()
+        do_backup = self.t_backup.get()
+        replace = self.t_replace.get()
+        out = self.t_outfolder.get() if not replace else None
+        threading.Thread(target=self._trim_title_thread,
+                         args=(folder, file_list, padding, do_backup, replace, out),
+                         daemon=True).start()
+
+    def _trim_title_thread(self, folder, file_list, padding, do_backup, replace, out):
+        self._animate_status('正在裁剪')
+        self.root.after(0, self._start_spinner)
+        self._set_progress(0)
+        png_list = [f for f in file_list if f.lower().endswith('.png')]
+        if not png_list:
+            self._set_status('未找到 PNG 文件')
+            self.root.after(0, self._stop_spinner)
+            self.is_running = False
+            return
+        if do_backup:
+            self._animate_status('正在备份')
+            try:
+                self._do_backup(folder, png_list)
+            except Exception as e:
+                self._set_status(f'Backup failed: {e}')
+                self.root.after(0, self._stop_spinner)
+                self.is_running = False
+                return
+        total_before = 0
+        total_after = 0
+        个错误 = []
+        total = len(png_list)
+        if not replace:
+            os.makedirs(out, exist_ok=True)
+        for i, fname in enumerate(png_list):
+            if fname in self.tree_items:
+                self.root.after(0, lambda t=self.tree_items[fname]: self._highlight_item(t))
+            src = os.path.join(folder, fname)
+            sb = os.path.getsize(src)
+            total_before += sb
+            dst = src if replace else os.path.join(out, fname)
+            try:
+                with Image.open(src) as img:
+                    img = img.convert('RGBA')
+                    bbox = img.getbbox()
+                    if not bbox:
+                        continue
+                    left = max(0, bbox[0] - padding)
+                    top = max(0, bbox[1] - padding)
+                    right = min(img.width, bbox[2] + padding)
+                    bottom = min(img.height, bbox[3] + padding)
+                    cropped = img.crop((left, top, right, bottom))
+                    cropped.save(dst, optimize=True)
+                sa = os.path.getsize(dst)
+                total_after += sa
+                self.root.after(0, lambda n=fname, s=sa: self._update_row_size(n, s))
+            except Exception as e:
+                个错误.append(f'{fname}: {e}')
+            self._set_progress((i + 1) / total * 100)
+            self._animate_status(f'裁剪 {i+1}/{total}')
+            time.sleep(0.005)
+        self._finish_op(total_before, total_after, 个错误, '裁剪')
+
+    # ═══════════════════════ Tab: 检查 ═══════════════════════
+
+    def _tab_inspect(self):
+        tab = ttk.Frame(self.notebook)
+        self.notebook.add(tab, text=' ' + self._t('tab_inspect') + ' ')
+        f = ttk.Frame(tab)
+        f.pack(fill=tk.BOTH, expand=True, padx=10, pady=8)
+
+        btn_f = ttk.Frame(f); btn_f.pack(fill=tk.X, pady=4)
+        ttk.Button(btn_f, text=self._t('start_inspect'), command=self._run_inspect).pack(side=tk.LEFT, ipadx=8)
+
+        tree_fr = ttk.Frame(f)
+        tree_fr.pack(fill=tk.BOTH, expand=True, pady=4)
+        cols = ('filename', 'canvas', 'content', 'top_pad', 'bot_pad', 'left_pad', 'right_pad')
+        self.inspect_tree = ttk.Treeview(tree_fr, columns=cols, show='headings', height=8)
+        col_widths = [220, 90, 90, 70, 70, 70, 70]
+        col_texts = ['文件名', '画布', '内容', '上边距', '下边距', '左边距', '右边距']
+        for c, w, txt in zip(cols, col_widths, col_texts):
+            self.inspect_tree.heading(c, text=txt)
+            self.inspect_tree.column(c, width=w, minwidth=50, anchor=tk.CENTER)
+        vsb = ttk.Scrollbar(tree_fr, orient=tk.VERTICAL, command=self.inspect_tree.yview)
+        self.inspect_tree.configure(yscrollcommand=vsb.set)
+        self.inspect_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        vsb.pack(side=tk.RIGHT, fill=tk.Y)
+
+    # ═══════════════════════ Inspect 执行 ═══════════════════════
+
+    def _run_inspect(self):
+        if self.is_running:
+            return
+        folder = self.folder.get()
+        if not folder or not self.file_data:
+            messagebox.showwarning(self._t('notice'), '请先选择文件夹并刷新')
+            return
+        self.is_running = True
+        png_list = [d for d in self.file_data if d['name'].lower().endswith('.png')]
+        if not png_list:
+            messagebox.showwarning(self._t('notice'), '未找到 PNG 文件')
+            self.is_running = False
+            return
+        self.inspect_tree.delete(*self.inspect_tree.get_children())
+        threading.Thread(target=self._inspect_thread, args=(png_list,), daemon=True).start()
+
+    def _inspect_thread(self, png_list):
+        self._animate_status('正在检查')
+        self.root.after(0, self._start_spinner)
+        self._set_progress(0)
+        total = len(png_list)
+        for i, d in enumerate(png_list):
+            path = d['path']
+            try:
+                with Image.open(path) as img:
+                    img = img.convert('RGBA')
+                    w, h = img.size
+                    bbox = img.getbbox()
+                    if bbox:
+                        cw, ch = bbox[2] - bbox[0], bbox[3] - bbox[1]
+                        tp, bp = bbox[1], h - 1 - bbox[3]
+                        lp, rp = bbox[0], w - 1 - bbox[2]
+                        vals = (d['name'], f'{w}x{h}', f'{cw}x{ch}', str(tp), str(bp), str(lp), str(rp))
+                    else:
+                        vals = (d['name'], f'{w}x{h}', '透明', '-', '-', '-', '-')
+                    self.root.after(0, lambda v=vals: self.inspect_tree.insert('', tk.END, values=v))
+            except Exception as e:
+                self.root.after(0, lambda n=d['name'], err=str(e): self.inspect_tree.insert('', tk.END, values=(n, '错误', err, '', '', '', '')))
+            self._set_progress((i + 1) / total * 100)
+            time.sleep(0.005)
+        self.root.after(0, self._stop_spinner)
+        self._set_status(f'检查完成: {total} 个文件')
+        self.is_running = False
+
+    # ═══════════════════════ Tab: 规范化 ═══════════════════════
+
+    def _tab_normalize(self):
+        tab = ttk.Frame(self.notebook)
+        self.notebook.add(tab, text=' ' + self._t('tab_normalize') + ' ')
+        f = ttk.Frame(tab)
+        f.pack(fill=tk.X, padx=10, pady=8)
+
+        r1 = ttk.Frame(f); r1.pack(fill=tk.X, pady=2)
+        ttk.Label(r1, text=self._t('alpha_threshold'), width=12).pack(side=tk.LEFT)
+        tk.Spinbox(r1, from_=1, to=255, textvariable=self.n_alpha_threshold, width=5, bg=ENTRY_BG, fg=FG, insertbackground=FG, highlightthickness=0, borderwidth=0).pack(side=tk.LEFT, padx=4)
+
+        r2 = ttk.Frame(f); r2.pack(fill=tk.X, pady=2)
+        ttk.Label(r2, text=self._t('target_height'), width=12).pack(side=tk.LEFT)
+        tk.Spinbox(r2, from_=16, to=4096, textvariable=self.n_target_height, width=6, bg=ENTRY_BG, fg=FG, insertbackground=FG, highlightthickness=0, borderwidth=0).pack(side=tk.LEFT, padx=4)
+
+        r3 = ttk.Frame(f); r3.pack(fill=tk.X, pady=2)
+        ttk.Label(r3, text=self._t('norm_padding'), width=12).pack(side=tk.LEFT)
+        tk.Spinbox(r3, from_=0, to=100, textvariable=self.n_padding, width=5, bg=ENTRY_BG, fg=FG, insertbackground=FG, highlightthickness=0, borderwidth=0).pack(side=tk.LEFT, padx=4)
+
+        r4 = ttk.Frame(f); r4.pack(fill=tk.X, pady=4)
+        ttk.Radiobutton(r4, text=self._t('replace_orig'), variable=self.n_replace, value=True,
+                        command=lambda: self._toggle_out(self.n_replace, self.n_outrow, self.n_outfolder)).pack(side=tk.LEFT)
+        ttk.Radiobutton(r4, text=self._t('output_to'), variable=self.n_replace, value=False,
+                        command=lambda: self._toggle_out(self.n_replace, self.n_outrow, self.n_outfolder)).pack(side=tk.LEFT, padx=10)
+        self.n_outrow = ttk.Frame(r4)
+        ttk.Entry(self.n_outrow, textvariable=self.n_outfolder, width=40).pack(side=tk.LEFT, padx=4)
+        ttk.Button(self.n_outrow, text='Browse', command=lambda: self._browse_out(self.n_outfolder)).pack(side=tk.LEFT)
+
+        r5 = ttk.Frame(f); r5.pack(fill=tk.X, pady=6)
+        ttk.Checkbutton(r5, text=self._t('enable_backup'), variable=self.n_backup).pack(side=tk.LEFT)
+        ttk.Button(r5, text=self._t('start_normalize'), command=self._run_normalize).pack(side=tk.RIGHT, ipadx=8)
+
+    # ═══════════════════════ Normalize 执行 ═══════════════════════
+
+    def _run_normalize(self):
+        if self.is_running:
+            return
+        folder = self.folder.get()
+        if not folder or not self.file_data:
+            messagebox.showwarning(self._t('notice'), '请先选择文件夹并刷新')
+            return
+        self.is_running = True
+        file_list = [d['name'] for d in self.file_data]
+        alpha_threshold = self.n_alpha_threshold.get()
+        target_height = self.n_target_height.get()
+        padding = self.n_padding.get()
+        do_backup = self.n_backup.get()
+        replace = self.n_replace.get()
+        out = self.n_outfolder.get() if not replace else None
+        threading.Thread(target=self._normalize_thread,
+                         args=(folder, file_list, alpha_threshold, target_height, padding, do_backup, replace, out),
+                         daemon=True).start()
+
+    def _normalize_thread(self, folder, file_list, alpha_threshold, target_height, padding, do_backup, replace, out):
+        self._animate_status('正在规范化')
+        self.root.after(0, self._start_spinner)
+        self._set_progress(0)
+        png_list = [f for f in file_list if f.lower().endswith('.png')]
+        if not png_list:
+            self._set_status('未找到 PNG 文件')
+            self.root.after(0, self._stop_spinner)
+            self.is_running = False
+            return
+        if do_backup:
+            self._animate_status('正在备份')
+            try:
+                self._do_backup(folder, png_list)
+            except Exception as e:
+                self._set_status(f'Backup failed: {e}')
+                self.root.after(0, self._stop_spinner)
+                self.is_running = False
+                return
+        total_before = 0
+        total_after = 0
+        个错误 = []
+        total = len(png_list)
+        if not replace:
+            os.makedirs(out, exist_ok=True)
+        for i, fname in enumerate(png_list):
+            if fname in self.tree_items:
+                self.root.after(0, lambda t=self.tree_items[fname]: self._highlight_item(t))
+            src = os.path.join(folder, fname)
+            sb = os.path.getsize(src)
+            total_before += sb
+            dst = src if replace else os.path.join(out, fname)
+            try:
+                with Image.open(src) as img:
+                    img = img.convert('RGBA')
+                    alpha = img.getchannel('A')
+                    mask = alpha.point(lambda a: 255 if a >= alpha_threshold else 0)
+                    bbox = mask.getbbox()
+                    if not bbox:
+                        continue
+                    content = img.crop(bbox)
+                    cw, ch = content.size
+                    if ch <= 0:
+                        continue
+                    scale = target_height / ch
+                    new_w = max(1, round(cw * scale))
+                    scaled = content.resize((new_w, target_height), Image.LANCZOS)
+                    alpha2 = scaled.getchannel('A')
+                    mask2 = alpha2.point(lambda a: 255 if a >= alpha_threshold else 0)
+                    bbox2 = mask2.getbbox()
+                    if bbox2:
+                        scaled = scaled.crop(bbox2)
+                        sw, sh = scaled.size
+                        if sh != target_height:
+                            scaled = scaled.resize(
+                                (max(1, round(sw * target_height / sh)), target_height), Image.LANCZOS)
+                    canvas = Image.new('RGBA', (scaled.width + padding * 2, target_height + padding * 2), (0, 0, 0, 0))
+                    canvas.paste(scaled, (padding, padding), scaled)
+                    canvas.save(dst, optimize=True)
+                sa = os.path.getsize(dst)
+                total_after += sa
+                self.root.after(0, lambda n=fname, s=sa: self._update_row_size(n, s))
+            except Exception as e:
+                个错误.append(f'{fname}: {e}')
+            self._set_progress((i + 1) / total * 100)
+            self._animate_status(f'规范化 {i+1}/{total}')
+            time.sleep(0.005)
+        self._finish_op(total_before, total_after, 个错误, '规范化')
+
     def _toggle_key_show(self, frame):
         for child in frame.winfo_children():
             if isinstance(child, ttk.Entry):
                 child.config(show='' if child.cget('show') == '*' else '*')
 
-    def _open_single(self):
-        path = filedialog.askopenfilename(
+    def _open_images(self):
+        paths = filedialog.askopenfilenames(
             title=self._t('open_image_fd'),
             filetypes=[('Images', '*.png *.jpg *.jpeg *.webp *.bmp *.tiff *.gif *.ico')])
-        if not path:
+        if not paths:
             return
-        self._enter_single_mode(path)
+        if len(paths) == 1:
+            self._enter_single_mode(paths[0])
+        else:
+            self._enter_multi_mode(list(paths))
+
+    def _enter_multi_mode(self, paths):
+        """切换到多图目标模式"""
+        self.multi_paths = [os.path.normpath(p) for p in paths]
+        self.target_mode.set('multi')
+        folder = os.path.dirname(self.multi_paths[0])
+        if folder:
+            self.folder.set(folder)
+        self._update_mode_ui()
+        self._refresh()
 
 
     # ═══════════════════════ 通用工具方法 ═══════════════════════
@@ -838,6 +1181,7 @@ class ImgBatchApp:
         if path:
             self.target_mode.set('folder')
             self.single_path.set('')
+            self.multi_paths.clear()
             self.folder.set(os.path.normpath(path))
             self._update_mode_ui()
             self._refresh()
@@ -906,6 +1250,38 @@ class ImgBatchApp:
             item = self.tree.insert('', tk.END, values=(f, self._fmt_size(sz), dims, fmt))
             self.tree_items[f] = item
             self.lbl_count.config(text=f'1 file | {self._fmt_size(sz)}')
+            self._schedule_compress_preview()
+            return
+        # 多图模式：只加载选中的多张图
+        if self.target_mode.get() == 'multi':
+            if not self.multi_paths:
+                self.lbl_count.config(text='')
+                return
+            for path in self.multi_paths:
+                if not os.path.isfile(path):
+                    continue
+                f = os.path.basename(path)
+                ext = os.path.splitext(f)[1].lower()
+                if ext not in SUPPORTED_EXT:
+                    continue
+                try:
+                    sz = os.path.getsize(path)
+                except OSError:
+                    continue
+                try:
+                    with Image.open(path) as img:
+                        dims = f'{img.width}x{img.height}'
+                        fmt = img.format or ext
+                except Exception:
+                    dims = '?'
+                    fmt = ext
+                d = {'name': f, 'path': path, 'size': sz, 'size_str': self._fmt_size(sz),
+                     'dimensions': dims, 'format': fmt}
+                self.file_data.append(d)
+                item = self.tree.insert('', tk.END, values=(f, self._fmt_size(sz), dims, fmt))
+                self.tree_items[f] = item
+            total = sum(d['size'] for d in self.file_data)
+            self.lbl_count.config(text=f'{len(self.file_data)}  files | {self._fmt_size(total)}')
             self._schedule_compress_preview()
             return
         # 文件夹模式：扫描整个目录
