@@ -978,6 +978,10 @@ class ImgBatchApp:
         self.inspect_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         vsb.pack(side=tk.RIGHT, fill=tk.Y)
 
+        action_f = ttk.Frame(f); action_f.pack(fill=tk.X, pady=2)
+        ttk.Button(action_f, text='✂ ' + self._t('trim_title'), command=self._inspect_trim_selected).pack(side=tk.LEFT, padx=2)
+        ttk.Button(action_f, text=self._t('tab_normalize'), command=self._inspect_normalize_selected).pack(side=tk.LEFT, padx=2)
+
     # ═══════════════════════ Inspect 执行 ═══════════════════════
 
     def _run_inspect(self):
@@ -1023,6 +1027,81 @@ class ImgBatchApp:
         self.root.after(0, self._stop_spinner)
         self._set_status(f'检查完成: {total} 个文件')
         self.is_running = False
+
+    def _get_inspect_selected_names(self):
+        sel = self.inspect_tree.selection()
+        if not sel:
+            messagebox.showwarning(self._t('notice'), '请在检查结果中先选择文件')
+            return None
+        names = []
+        for item in sel:
+            vals = self.inspect_tree.item(item, 'values')
+            if vals and vals[0]:
+                names.append(vals[0])
+        return names if names else None
+
+    def _inspect_trim_selected(self):
+        names = self._get_inspect_selected_names()
+        if not names:
+            return
+        # Switch to trim tab and set context
+        self._select_tab_by_key('tab_trim')
+        folder = self.folder.get()
+        self.file_data.clear()
+        self.tree.delete(*self.tree.get_children())
+        self.tree_items.clear()
+        for f in names:
+            path = os.path.join(folder, f)
+            if os.path.isfile(path):
+                ext = os.path.splitext(f)[1].lower()
+                try:
+                    sz = os.path.getsize(path)
+                    with Image.open(path) as img:
+                        dims = f'{img.width}x{img.height}'
+                        fmt = img.format or ext
+                except Exception:
+                    dims = '?'
+                    fmt = ext
+                d = {'name': f, 'path': path, 'size': sz, 'size_str': self._fmt_size(sz),
+                     'dimensions': dims, 'format': fmt}
+                self.file_data.append(d)
+                item = self.tree.insert('', tk.END, values=(f, self._fmt_size(sz), dims, fmt))
+                self.tree_items[f] = item
+
+    def _inspect_normalize_selected(self):
+        names = self._get_inspect_selected_names()
+        if not names:
+            return
+        self._select_tab_by_key('tab_normalize')
+        folder = self.folder.get()
+        self.file_data.clear()
+        self.tree.delete(*self.tree.get_children())
+        self.tree_items.clear()
+        for f in names:
+            path = os.path.join(folder, f)
+            if os.path.isfile(path):
+                ext = os.path.splitext(f)[1].lower()
+                try:
+                    sz = os.path.getsize(path)
+                    with Image.open(path) as img:
+                        dims = f'{img.width}x{img.height}'
+                        fmt = img.format or ext
+                except Exception:
+                    dims = '?'
+                    fmt = ext
+                d = {'name': f, 'path': path, 'size': sz, 'size_str': self._fmt_size(sz),
+                     'dimensions': dims, 'format': fmt}
+                self.file_data.append(d)
+                item = self.tree.insert('', tk.END, values=(f, self._fmt_size(sz), dims, fmt))
+                self.tree_items[f] = item
+
+    def _select_tab_by_key(self, key):
+        for i, tab_id in enumerate(self.notebook.tabs()):
+            tab_text = self.notebook.tab(tab_id, 'text')
+            expected = ' ' + self._t(key) + ' '
+            if tab_text == expected:
+                self.notebook.select(i)
+                return
 
     # ═══════════════════════ Tab: 规范化 ═══════════════════════
 
