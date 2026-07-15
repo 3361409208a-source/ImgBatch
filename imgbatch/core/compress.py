@@ -11,7 +11,7 @@ from typing import Callable, Dict, List, Optional, Set, Tuple
 from PIL import Image, UnidentifiedImageError
 
 from .common import (
-    convert_to_rgb_if_needed, get_save_format, QUALITY_FORMATS, SUPPORTED_EXT,
+    convert_to_rgb_if_needed, ensure_parent_dir, get_save_format, QUALITY_FORMATS, SUPPORTED_EXT,
 )
 from ..infra.logger import get_logger
 
@@ -114,15 +114,7 @@ def estimate_compressed_size(
         seen_formats.add(ext)
         try:
             with Image.open(d['path']) as img:
-                om = img.mode
-                if om in ('RGBA', 'P', 'LA') and ext in ('.jpg', '.jpeg'):
-                    rgb = Image.new('RGB', img.size, (255, 255, 255))
-                    if om == 'P':
-                        img = img.convert('RGBA')
-                    rgb.paste(img, mask=img.split()[-1] if img.mode == 'RGBA' else None)
-                    img = rgb
-                elif om not in ('RGB', 'L'):
-                    img = img.convert('RGB')
+                img = convert_to_rgb_if_needed(img, ext)
 
                 if resize_pct < 100:
                     w, h = img.size
@@ -186,14 +178,16 @@ def run_compress_batch(
     total_after = 0
     total = len(file_list)
 
+    backup_dir = None
     if do_backup and backup_fn:
         try:
-            backup_fn(folder, file_list)
+            backup_dir = backup_fn(folder, file_list)
         except OSError as exc:
             logger.error("Backup failed: %s", exc)
             return {
                 'total_before': 0, 'total_after': 0,
                 'errors': [f'Backup failed: {exc}'], 'rename_map': {},
+                'backup_dir': None,
             }
 
     if not replace and out:
@@ -206,70 +200,70 @@ def run_compress_batch(
         src = os.path.join(folder, fname)
         if not os.path.exists(src):
             errors.append(f'{fname}: source not found')
-            continue
+        else:
+            try:
+                sb = os.path.getsize(src)
+            except OSError as exc:
+                errors.append(f'{fname}: {exc}')
+            else:
+                total_before += sb
+                base, orig_ext = os.path.splitext(fname)
+                orig_ext_l = orig_ext.lower()
 
-        try:
-            sb = os.path.getsize(src)
-        except OSError as exc:
-            errors.append(f'{fname}: {exc}')
-            continue
+                target_ext = options.get('target_fmt', orig_ext) if options.get('convert') else orig_ext
+                target_ext_l = target_ext.lower()
+                out_name = base + target_ext
+                dst = os.path.join(folder if replace else out, out_name)
+                if not replace:
+                    ensure_parent_dir(dst)
 
-        total_before += sb
-        base, orig_ext = os.path.splitext(fname)
-        orig_ext_l = orig_ext.lower()
-
-        target_ext = options.get('target_fmt', orig_ext) if options.get('convert') else orig_ext
-        target_ext_l = target_ext.lower()
-        out_name = base + target_ext
-        dst = os.path.join(folder if replace else out, out_name)
-
-        try:
-            with Image.open(src) as img:
-                original_exif = img.info.get('exif')
-                img = convert_to_rgb_if_needed(img, target_ext_l)
-
-                if resize_pct < 100:
-                    w, h = img.size
-                    img = img.resize(
-                        (int(w * resize_pct / 100), int(h * resize_pct / 100)),
-                        Image.LANCZOS,
-                    )
-
-                if options.get('watermark') and options.get('wm_text'):
-                    from .watermark import add_text_watermark
-                    img = add_text_watermark(img, options['wm_text'], options.get('wm_opacity', 0.5))
-
-                kw: dict = {'optimize': True}
-                if target_ext_l in QUALITY_FORMATS:
-                    kw['quality'] = max(1, min(100, quality))
-                if exif_mode == 'keep' and original_exif:
-                    kw['exif'] = original_exif
-
-                save_fmt = get_save_format(target_ext_l)
-                if save_fmt:
-                    img.save(dst, format=save_fmt, **kw)
-                else:
-                    img.save(dst, **kw)
-
-            if replace and target_ext_l != orig_ext_l and os.path.exists(src):
                 try:
-                    os.remove(src)
-                except OSError:
-                    pass
+                    with Image.open(src) as img:
+                        original_exif = img.info.get('exif')
+                        img = convert_to_rgb_if_needed(img, target_ext_l)
 
-            sa = os.path.getsize(dst)
-            total_after += sa
+                        if resize_pct < 100:
+                            w, h = img.size
+                            img = img.resize(
+                                (int(w * resize_pct / 100), int(h * resize_pct / 100)),
+                                Image.LANCZOS,
+                            )
 
-            if on_file_done:
-                on_file_done(fname, sa)
+                        if options.get('watermark') and options.get('wm_text'):
+                            from .watermark import add_text_watermark
+                            img = add_text_watermark(img, options['wm_text'], options.get('wm_opacity', 0.5))
 
-            if options.get('rename'):
-                new_name = options.get('prefix', '') + base + options.get('suffix', '') + target_ext
-                if new_name != out_name:
-                    rename_map[out_name] = new_name
+                        kw: dict = {'optimize': True}
+                        if target_ext_l in QUALITY_FORMATS:
+                            kw['quality'] = max(1, min(100, quality))
+                        if exif_mode == 'keep' and original_exif:
+                            kw['exif'] = original_exif
 
-        except (UnidentifiedImageError, OSError) as exc:
-            errors.append(f'{fname}: {exc}')
+                        save_fmt = get_save_format(target_ext_l)
+                        if save_fmt:
+                            img.save(dst, format=save_fmt, **kw)
+                        else:
+                            img.save(dst, **kw)
+
+                    if replace and target_ext_l != orig_ext_l and os.path.exists(src):
+                        try:
+                            os.remove(src)
+                        except OSError:
+                            pass
+
+                    sa = os.path.getsize(dst)
+                    total_after += sa
+
+                    if on_file_done:
+                        on_file_done(fname, sa)
+
+                    if options.get('rename'):
+                        new_name = options.get('prefix', '') + base + options.get('suffix', '') + target_ext
+                        if new_name != out_name:
+                            rename_map[out_name] = new_name
+
+                except (UnidentifiedImageError, OSError) as exc:
+                    errors.append(f'{fname}: {exc}')
 
         if on_progress:
             pct = (i + 1) / total * 100
@@ -280,6 +274,7 @@ def run_compress_batch(
         try:
             old_path = os.path.join(folder if replace else out, old_name)
             new_path = os.path.join(folder if replace else out, new_name)
+            ensure_parent_dir(new_path)
             os.rename(old_path, new_path)
         except OSError as exc:
             errors.append(f'{old_name} -> {new_name}: {exc}')
@@ -290,4 +285,5 @@ def run_compress_batch(
         'errors': errors,
         'rename_map': rename_map,
         'cancelled': state.cancelled,
+        'backup_dir': backup_dir,
     }

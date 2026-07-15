@@ -11,6 +11,7 @@ from pathlib import Path
 
 from PIL import Image
 
+from ...core.common import ensure_parent_dir
 from ...infra.logger import get_logger
 
 
@@ -40,7 +41,9 @@ def do_backup(folder: str, file_names: List[str]) -> str:
     for f in file_names:
         src = os.path.join(folder, f)
         if os.path.exists(src):
-            shutil.copy2(src, os.path.join(backup_dir, f))
+            dst = os.path.join(backup_dir, f)
+            ensure_parent_dir(dst)
+            shutil.copy2(src, dst)
     get_logger().info("Backup created: %s (%d files)", backup_dir, len(file_names))
     return backup_dir
 

@@ -21,8 +21,9 @@ from typing import Callable, Dict, List, Optional
 from PIL import Image, ImageTk, UnidentifiedImageError
 
 from ..core.common import (
-    SUPPORTED_EXT, QUALITY_FORMATS, CONVERT_TARGETS, scan_folder,
-    fmt_size, convert_to_rgb_if_needed, get_save_format,
+    SUPPORTED_EXT, QUALITY_FORMATS, CONVERT_TARGETS, FILTER_FORMATS, SIZE_PRESETS,
+    scan_folder, fmt_size, convert_to_rgb_if_needed, get_save_format,
+    filter_files, parse_kb_to_bytes,
 )
 from ..core.compress import compress_image, estimate_compressed_size, run_compress_batch
 from ..core.convert import run_convert_batch
@@ -40,7 +41,7 @@ from ..infra.settings import load_config, save_config
 from ..infra.i18n import get_i18n, tr, TRANSLATIONS
 from ..infra.threading import TaskRunner, ProgressTracker
 from .theme import apply_theme, BG, BG2, BG3, FG, ACCENT, ACCENT2, BORDER, ENTRY_BG
-from .widgets.backup_mgr import find_backups, do_backup, do_restore, do_clear_backups
+from .widgets.backup_mgr import find_backups, do_backup as create_backup, do_restore, do_clear_backups
 
 # Windows Drag & Drop
 if os.name == 'nt':
@@ -90,11 +91,21 @@ class ImgBatchApp:
 
         # State
         self.folder = tk.StringVar(value=self.config.get('last_folder', ''))
-        self.file_data: List[dict] = []
+        self.all_file_data: List[dict] = []  # unfiltered scan results
+        self.file_data: List[dict] = []       # currently visible (filtered)
         self.tree_items: Dict[str, str] = {}
         self.target_mode = tk.StringVar(value='folder')
         self.single_path = tk.StringVar()
         self.multi_paths: List[str] = []
+
+        # File list filters
+        self.f_name = tk.StringVar(value='')
+        self.f_format = tk.StringVar(value='ALL')
+        self.f_size_preset = tk.StringVar(value='all')
+        self.f_size_min_kb = tk.StringVar(value='')
+        self.f_size_max_kb = tk.StringVar(value='')
+        self.f_min_width = tk.StringVar(value='')
+        self.f_min_height = tk.StringVar(value='')
 
         # Task runner
         self.task_runner = TaskRunner()
@@ -244,6 +255,62 @@ class ImgBatchApp:
         self.lbl_count = ttk.Label(list_hdr, text='')
         self.lbl_count.pack(side=tk.RIGHT)
 
+        # Filter bar
+        self.filter_fr = ttk.Frame(self.root)
+        self.filter_fr.pack(fill=tk.X, padx=12, pady=(4, 0))
+        self.lbl_filter = ttk.Label(self.filter_fr, text=tr('filter'))
+        self.lbl_filter.pack(side=tk.LEFT)
+
+        self.lbl_filter_name = ttk.Label(self.filter_fr, text=tr('filter_name'))
+        self.lbl_filter_name.pack(side=tk.LEFT, padx=(8, 2))
+        self.entry_filter_name = ttk.Entry(self.filter_fr, textvariable=self.f_name, width=14)
+        self.entry_filter_name.pack(side=tk.LEFT)
+        self.entry_filter_name.bind('<KeyRelease>', lambda e: self._on_filter_change())
+
+        self.lbl_filter_fmt = ttk.Label(self.filter_fr, text=tr('filter_format'))
+        self.lbl_filter_fmt.pack(side=tk.LEFT, padx=(8, 2))
+        self.cmb_filter_fmt = ttk.Combobox(
+            self.filter_fr, textvariable=self.f_format, width=7, state='readonly',
+            values=list(FILTER_FORMATS),
+        )
+        self.cmb_filter_fmt.pack(side=tk.LEFT)
+        self.cmb_filter_fmt.bind('<<ComboboxSelected>>', lambda e: self._on_filter_change())
+
+        self.lbl_filter_size = ttk.Label(self.filter_fr, text=tr('filter_size'))
+        self.lbl_filter_size.pack(side=tk.LEFT, padx=(8, 2))
+        self._size_preset_keys = list(SIZE_PRESETS.keys())
+        self.cmb_filter_size = ttk.Combobox(
+            self.filter_fr, width=12, state='readonly',
+        )
+        self.cmb_filter_size.pack(side=tk.LEFT)
+        self.cmb_filter_size.bind('<<ComboboxSelected>>', self._on_size_preset_change)
+        self._refresh_size_preset_labels()
+
+        self.lbl_filter_size_unit = ttk.Label(self.filter_fr, text=tr('filter_size_kb'))
+        self.lbl_filter_size_unit.pack(side=tk.LEFT, padx=(6, 2))
+        self.entry_size_min = ttk.Entry(self.filter_fr, textvariable=self.f_size_min_kb, width=6)
+        self.entry_size_min.pack(side=tk.LEFT)
+        ttk.Label(self.filter_fr, text='-').pack(side=tk.LEFT, padx=2)
+        self.entry_size_max = ttk.Entry(self.filter_fr, textvariable=self.f_size_max_kb, width=6)
+        self.entry_size_max.pack(side=tk.LEFT)
+        self.entry_size_min.bind('<KeyRelease>', lambda e: self._on_custom_size_edit())
+        self.entry_size_max.bind('<KeyRelease>', lambda e: self._on_custom_size_edit())
+
+        self.lbl_filter_dim = ttk.Label(self.filter_fr, text=tr('filter_dim'))
+        self.lbl_filter_dim.pack(side=tk.LEFT, padx=(8, 2))
+        self.entry_min_w = ttk.Entry(self.filter_fr, textvariable=self.f_min_width, width=5)
+        self.entry_min_w.pack(side=tk.LEFT)
+        ttk.Label(self.filter_fr, text='×').pack(side=tk.LEFT, padx=1)
+        self.entry_min_h = ttk.Entry(self.filter_fr, textvariable=self.f_min_height, width=5)
+        self.entry_min_h.pack(side=tk.LEFT)
+        self.entry_min_w.bind('<KeyRelease>', lambda e: self._on_filter_change())
+        self.entry_min_h.bind('<KeyRelease>', lambda e: self._on_filter_change())
+
+        self.btn_filter_reset = ttk.Button(
+            self.filter_fr, text=tr('filter_reset'), command=self._reset_filters, width=6,
+        )
+        self.btn_filter_reset.pack(side=tk.LEFT, padx=(8, 0))
+
         # Middle: file list + preview
         middle = ttk.Frame(self.root)
         middle.pack(fill=tk.BOTH, expand=True, padx=12)
@@ -331,6 +398,15 @@ class ImgBatchApp:
         self.list_label.config(text=tr('file_list'))
         self.preview_label.config(text=tr('preview'))
         self.lbl_status.config(text=tr('ready'))
+        self.lbl_filter.config(text=tr('filter'))
+        self.lbl_filter_name.config(text=tr('filter_name'))
+        self.lbl_filter_fmt.config(text=tr('filter_format'))
+        self.lbl_filter_size.config(text=tr('filter_size'))
+        self.lbl_filter_size_unit.config(text=tr('filter_size_kb'))
+        self.lbl_filter_dim.config(text=tr('filter_dim'))
+        self.btn_filter_reset.config(text=tr('filter_reset'))
+        self._refresh_size_preset_labels()
+        self._update_count_label()
 
         # Update tab texts
         for i, tab_id in enumerate(self.notebook.tabs()):
@@ -486,6 +562,7 @@ class ImgBatchApp:
 
     def _refresh(self):
         """Refresh file list. Runs in a background thread for large folders."""
+        self.all_file_data.clear()
         self.file_data.clear()
         self.tree.delete(*self.tree.get_children())
         self.tree_items.clear()
@@ -495,16 +572,15 @@ class ImgBatchApp:
             if not path or not os.path.isfile(path):
                 self.lbl_count.config(text='')
                 return
-            self._add_file_to_list(path)
-            self._schedule_compress_preview()
+            self._collect_file_info(path)
+            self._apply_filters()
             return
 
         if self.target_mode.get() == 'multi':
             for path in self.multi_paths:
                 if os.path.isfile(path):
-                    self._add_file_to_list(path)
-            self._update_count_label()
-            self._schedule_compress_preview()
+                    self._collect_file_info(path)
+            self._apply_filters()
             return
 
         # Folder mode — scan in background
@@ -513,24 +589,24 @@ class ImgBatchApp:
             self.lbl_count.config(text='')
             return
 
-        # Run scan in a thread to avoid UI freeze
         def _scan_thread():
             recursive = self.recursive_scan.get()
             data = scan_folder(folder, recursive=recursive)
             self.root.after(0, lambda: self._populate_file_list(data))
 
         threading.Thread(target=_scan_thread, daemon=True).start()
-        self.lbl_count.config(text='Loading...')
+        self.lbl_count.config(text=tr('loading'))
 
-    def _add_file_to_list(self, path):
+    def _collect_file_info(self, path) -> Optional[dict]:
+        """Build a file-info dict and append to ``all_file_data``."""
         f = os.path.basename(path)
         ext = Path(path).suffix.lower()
         if ext not in SUPPORTED_EXT:
-            return
+            return None
         try:
             sz = os.path.getsize(path)
         except OSError:
-            return
+            return None
         try:
             with Image.open(path) as img:
                 dims = f'{img.width}x{img.height}'
@@ -540,23 +616,121 @@ class ImgBatchApp:
             fmt = ext[1:]
         d = {'name': f, 'path': path, 'size': sz, 'size_str': fmt_size(sz),
              'dimensions': dims, 'format': fmt}
-        self.file_data.append(d)
-        item = self.tree.insert('', tk.END, values=(f, fmt_size(sz), dims, fmt))
-        self.tree_items[f] = item
+        self.all_file_data.append(d)
+        return d
 
     def _populate_file_list(self, data):
-        for d in data:
-            self.file_data.append(d)
-            item = self.tree.insert('', tk.END,
-                                    values=(d['name'], d['size_str'], d['dimensions'], d['format']))
+        self.all_file_data = list(data)
+        self._apply_filters()
+
+    def _parse_optional_int(self, value: str) -> Optional[int]:
+        s = (value or '').strip()
+        if not s:
+            return None
+        try:
+            n = int(float(s))
+        except ValueError:
+            return None
+        return n if n >= 0 else None
+
+    def _current_size_bounds(self) -> tuple:
+        preset = self.f_size_preset.get()
+        if preset == 'custom' or preset not in SIZE_PRESETS:
+            return (parse_kb_to_bytes(self.f_size_min_kb.get()),
+                    parse_kb_to_bytes(self.f_size_max_kb.get()))
+        return SIZE_PRESETS[preset]
+
+    def _apply_filters(self):
+        """Recompute ``file_data`` from ``all_file_data`` and rebuild the tree."""
+        min_size, max_size = self._current_size_bounds()
+        fmt = self.f_format.get()
+        formats = None if not fmt or fmt == 'ALL' else {fmt}
+
+        self.file_data = filter_files(
+            self.all_file_data,
+            name_query=self.f_name.get(),
+            formats=formats,
+            min_size=min_size,
+            max_size=max_size,
+            min_width=self._parse_optional_int(self.f_min_width.get()),
+            min_height=self._parse_optional_int(self.f_min_height.get()),
+        )
+
+        self.tree.delete(*self.tree.get_children())
+        self.tree_items.clear()
+        for d in self.file_data:
+            item = self.tree.insert(
+                '', tk.END,
+                values=(d['name'], d['size_str'], d['dimensions'], d['format']),
+            )
             self.tree_items[d['name']] = item
+
         self._update_count_label()
         self._schedule_compress_preview()
 
+    def _on_filter_change(self, event=None):
+        self._apply_filters()
+
+    def _on_custom_size_edit(self, event=None):
+        # Typing custom KB values switches preset to Custom
+        if self.f_size_preset.get() != 'custom':
+            self.f_size_preset.set('custom')
+            self._refresh_size_preset_labels()
+        self._apply_filters()
+
+    def _on_size_preset_change(self, event=None):
+        label = self.cmb_filter_size.get()
+        label_to_key = {tr(f'filter_size_{k}'): k for k in self._size_preset_keys}
+        preset = label_to_key.get(label, 'all')
+        self.f_size_preset.set(preset)
+
+        if preset != 'custom' and preset in SIZE_PRESETS:
+            lo, hi = SIZE_PRESETS[preset]
+            if lo is None and hi is None:
+                self.f_size_min_kb.set('')
+                self.f_size_max_kb.set('')
+            elif lo is None:
+                self.f_size_min_kb.set('')
+                self.f_size_max_kb.set(str((hi + 1) // 1024))
+            elif hi is None:
+                self.f_size_min_kb.set(str(lo // 1024))
+                self.f_size_max_kb.set('')
+            else:
+                self.f_size_min_kb.set(str(lo // 1024))
+                self.f_size_max_kb.set(str((hi + 1) // 1024))
+        self._apply_filters()
+
+    def _refresh_size_preset_labels(self):
+        """Update size-preset combobox display values for current language."""
+        labels = [tr(f'filter_size_{k}') for k in self._size_preset_keys]
+        self.cmb_filter_size['values'] = labels
+        cur = self.f_size_preset.get()
+        if cur not in SIZE_PRESETS:
+            cur = 'all'
+            self.f_size_preset.set(cur)
+        self.cmb_filter_size.set(tr(f'filter_size_{cur}'))
+
+    def _reset_filters(self):
+        self.f_name.set('')
+        self.f_format.set('ALL')
+        self.f_size_preset.set('all')
+        self.f_size_min_kb.set('')
+        self.f_size_max_kb.set('')
+        self.f_min_width.set('')
+        self.f_min_height.set('')
+        self._refresh_size_preset_labels()
+        self._apply_filters()
+
     def _update_count_label(self):
-        total = sum(d['size'] for d in self.file_data)
-        n = len(self.file_data)
-        self.lbl_count.config(text=f'{n} files | {fmt_size(total)}')
+        shown = len(self.file_data)
+        total = len(self.all_file_data)
+        shown_size = sum(d['size'] for d in self.file_data)
+        if total and shown < total:
+            self.lbl_count.config(
+                text=tr('filter_count', shown=shown, total=total, size=fmt_size(shown_size))
+            )
+        else:
+            self.lbl_count.config(text=f'{shown} files | {fmt_size(shown_size)}')
 
     def _preview(self, event):
         sel = self.tree.selection()
@@ -772,7 +946,9 @@ class ImgBatchApp:
         resize_pct = int(float(self.c_resize.get()))
         do_backup = self.c_backup.get()
         replace = self.c_replace.get()
-        out = self.c_outfolder.get() if not replace else None
+        out = self.c_outfolder.get().strip() if not replace else None
+        if not self._require_output_folder(replace, out):
+            return
         exif_mode = self.exif_mode.get()
         options = {
             'convert': self.u_convert.get(),
@@ -788,21 +964,13 @@ class ImgBatchApp:
         log_operation('compress', folder=folder, files=len(file_list), quality=quality,
                       resize=resize_pct, replace=replace, exif=exif_mode)
 
-        backup_dir = None
-        if do_backup:
-            try:
-                backup_dir = do_backup(folder, file_list)
-            except OSError as exc:
-                messagebox.showerror(tr('error'), tr('backup_failed', err=exc))
-                return
-
         self._set_running_ui(True)
         self.task_runner.start(
             run_compress_batch,
             folder, file_list, quality, resize_pct, do_backup, replace, out, exif_mode, options,
-            backup_fn=lambda f, fl: backup_dir,
+            backup_fn=create_backup if do_backup else None,
             on_progress=self._on_progress,
-            on_complete=lambda r: self._on_op_complete('compress', r, folder, file_list, backup_dir, options),
+            on_complete=lambda r: self._on_op_complete('compress', r, folder, file_list, options),
             on_error=self._on_op_error,
         )
 
@@ -844,25 +1012,19 @@ class ImgBatchApp:
         target_fmt = self.v_target_fmt.get()
         do_backup = self.v_conv_backup.get()
         replace = self.v_conv_replace.get()
-        out = self.v_conv_outfolder.get() if not replace else None
+        out = self.v_conv_outfolder.get().strip() if not replace else None
+        if not self._require_output_folder(replace, out):
+            return
 
         log_operation('convert', folder=folder, files=len(file_list), target=target_fmt)
-
-        backup_dir = None
-        if do_backup:
-            try:
-                backup_dir = do_backup(folder, file_list)
-            except OSError as exc:
-                messagebox.showerror(tr('error'), tr('backup_failed', err=exc))
-                return
 
         self._set_running_ui(True)
         self.task_runner.start(
             run_convert_batch,
             folder, file_list, target_fmt, do_backup, replace, out,
-            backup_fn=lambda f, fl: backup_dir,
+            backup_fn=create_backup if do_backup else None,
             on_progress=self._on_progress,
-            on_complete=lambda r: self._on_op_complete('convert', r, folder, file_list, backup_dir),
+            on_complete=lambda r: self._on_op_complete('convert', r, folder, file_list),
             on_error=self._on_op_error,
         )
 
@@ -1076,7 +1238,9 @@ class ImgBatchApp:
         file_list = [d['name'] for d in self.file_data]
         do_backup = self.w_backup.get()
         replace = self.w_replace.get()
-        out = self.w_outfolder.get() if not replace else None
+        out = self.w_outfolder.get().strip() if not replace else None
+        if not self._require_output_folder(replace, out):
+            return
         params = {
             'type': wtype, 'text': self.w_text.get(),
             'fontsize': self.w_fontsize.get(),
@@ -1089,21 +1253,13 @@ class ImgBatchApp:
 
         log_operation('watermark', folder=folder, files=len(file_list), type=wtype)
 
-        backup_dir = None
-        if do_backup:
-            try:
-                backup_dir = do_backup(folder, file_list)
-            except OSError as exc:
-                messagebox.showerror(tr('error'), tr('backup_failed', err=exc))
-                return
-
         self._set_running_ui(True)
         self.task_runner.start(
             run_watermark_batch,
             folder, file_list, params, do_backup, replace, out,
-            backup_fn=lambda f, fl: backup_dir,
+            backup_fn=create_backup if do_backup else None,
             on_progress=self._on_progress,
-            on_complete=lambda r: self._on_op_complete('watermark', r, folder, file_list, backup_dir),
+            on_complete=lambda r: self._on_op_complete('watermark', r, folder, file_list),
             on_error=self._on_op_error,
         )
 
@@ -1195,6 +1351,9 @@ class ImgBatchApp:
             self._anim_ai_loading_id = self.root.after(400, self._anim_ai_loading)
 
     def _ai_on_complete(self, result):
+        self._schedule_on_main(self._finish_ai_complete, result)
+
+    def _finish_ai_complete(self, result):
         self.ai_result = result.get('results', {})
         self._stop_ai_loading()
         self._stop_spinner()
@@ -1212,6 +1371,9 @@ class ImgBatchApp:
             messagebox.showwarning(tr('notice'), '\n'.join(errors[:5]))
 
     def _ai_on_error(self, exc):
+        self._schedule_on_main(self._finish_ai_error, exc)
+
+    def _finish_ai_error(self, exc):
         self._stop_ai_loading()
         self._stop_spinner()
         self._set_status(f'AI Error: {exc}')
@@ -1306,25 +1468,19 @@ class ImgBatchApp:
         padding = self.t_padding.get()
         do_backup = self.t_backup.get()
         replace = self.t_replace.get()
-        out = self.t_outfolder.get() if not replace else None
+        out = self.t_outfolder.get().strip() if not replace else None
+        if not self._require_output_folder(replace, out):
+            return
 
         log_operation('trim', folder=folder, files=len(file_list), padding=padding)
-
-        backup_dir = None
-        if do_backup:
-            try:
-                backup_dir = do_backup(folder, file_list)
-            except OSError as exc:
-                messagebox.showerror(tr('error'), tr('backup_failed', err=exc))
-                return
 
         self._set_running_ui(True)
         self.task_runner.start(
             run_trim_batch,
             folder, file_list, padding, do_backup, replace, out,
-            backup_fn=lambda f, fl: backup_dir,
+            backup_fn=create_backup if do_backup else None,
             on_progress=self._on_progress,
-            on_complete=lambda r: self._on_op_complete('trim', r, folder, file_list, backup_dir),
+            on_complete=lambda r: self._on_op_complete('trim', r, folder, file_list),
             on_error=self._on_op_error,
         )
 
@@ -1376,6 +1532,9 @@ class ImgBatchApp:
         )
 
     def _on_inspect_complete(self, result):
+        self._schedule_on_main(self._finish_inspect_complete, result)
+
+    def _finish_inspect_complete(self, result):
         self.inspect_tree.delete(*self.inspect_tree.get_children())
         for info in result.get('results', []):
             self.inspect_tree.insert('', tk.END, values=(
@@ -1436,31 +1595,35 @@ class ImgBatchApp:
         padding = self.n_padding.get()
         do_backup = self.n_backup.get()
         replace = self.n_replace.get()
-        out = self.n_outfolder.get() if not replace else None
+        out = self.n_outfolder.get().strip() if not replace else None
+        if not self._require_output_folder(replace, out):
+            return
 
         log_operation('normalize', folder=folder, files=len(file_list),
                       alpha=alpha_threshold, height=target_height)
-
-        backup_dir = None
-        if do_backup:
-            try:
-                backup_dir = do_backup(folder, file_list)
-            except OSError as exc:
-                messagebox.showerror(tr('error'), tr('backup_failed', err=exc))
-                return
 
         self._set_running_ui(True)
         self.task_runner.start(
             run_normalize_batch,
             folder, file_list, alpha_threshold, target_height, padding,
             do_backup, replace, out,
-            backup_fn=lambda f, fl: backup_dir,
+            backup_fn=create_backup if do_backup else None,
             on_progress=self._on_progress,
-            on_complete=lambda r: self._on_op_complete('normalize', r, folder, file_list, backup_dir),
+            on_complete=lambda r: self._on_op_complete('normalize', r, folder, file_list),
             on_error=self._on_op_error,
         )
 
     # ═══════════════════════ Common UI Helpers ═══════════════════════
+
+    def _schedule_on_main(self, fn: Callable, *args, **kwargs) -> None:
+        """Run a UI callback on the Tk main thread (safe from worker threads)."""
+        self.root.after(0, lambda: fn(*args, **kwargs))
+
+    def _require_output_folder(self, replace: bool, out: Optional[str]) -> bool:
+        if replace or (out and out.strip()):
+            return True
+        messagebox.showwarning(tr('notice'), tr('select_output_folder'))
+        return False
 
     def _toggle_out(self, replace_var, row, folder_var):
         if replace_var.get():
@@ -1526,18 +1689,27 @@ class ImgBatchApp:
     # ═══════════════════════ Task Callbacks ═══════════════════════
 
     def _on_progress(self, pct: float, msg: str):
+        self._schedule_on_main(self._update_progress_ui, pct, msg)
+
+    def _update_progress_ui(self, pct: float, msg: str):
         self._set_progress(pct)
-        self._animate_status(f'{msg}')
+        self._animate_status(msg)
 
     def _on_op_complete(self, op_type: str, result: dict, folder: str,
-                        file_list: List[str], backup_dir: Optional[str] = None,
-                        options: Optional[dict] = None):
+                        file_list: List[str], options: Optional[dict] = None):
+        self._schedule_on_main(
+            self._finish_op_complete, op_type, result, folder, file_list, options,
+        )
+
+    def _finish_op_complete(self, op_type: str, result: dict, folder: str,
+                            file_list: List[str], options: Optional[dict] = None):
         self._stop_spinner()
         self._clear_highlight()
         total_before = result.get('total_before', 0)
         total_after = result.get('total_after', 0)
         errors = result.get('errors', [])
         cancelled = result.get('cancelled', False)
+        backup_dir = result.get('backup_dir')
 
         if cancelled:
             self._set_status(tr('operation_cancelled'))
@@ -1566,6 +1738,9 @@ class ImgBatchApp:
                 tr('done'), f'{len(errs)} errors:\n' + '\n'.join(errs[:5])))
 
     def _on_rename_complete(self, result: dict, folder: str, mapping: dict):
+        self._schedule_on_main(self._finish_rename_complete, result, folder, mapping)
+
+    def _finish_rename_complete(self, result: dict, folder: str, mapping: dict):
         self._stop_spinner()
         self._clear_highlight()
         renamed = result.get('renamed', 0)
@@ -1594,6 +1769,9 @@ class ImgBatchApp:
                 tr('done'), tr('rename_done', n=renamed)))
 
     def _on_op_error(self, exc: Exception):
+        self._schedule_on_main(self._finish_op_error, exc)
+
+    def _finish_op_error(self, exc: Exception):
         self._stop_spinner()
         self._clear_highlight()
         self._set_status(f'Error: {exc}')
@@ -1625,6 +1803,8 @@ class ImgBatchApp:
         self.btn_start_compress.config(state=tk.DISABLED if running else tk.NORMAL)
         if running:
             self.btn_cancel.pack(side=tk.RIGHT, ipadx=8, padx=4)
+            self._set_progress(0)
+            self._start_spinner()
         else:
             self.btn_cancel.pack_forget()
             self._stop_spinner()

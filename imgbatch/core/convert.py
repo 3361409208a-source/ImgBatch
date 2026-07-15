@@ -8,7 +8,7 @@ from typing import Callable, List, Optional
 
 from PIL import Image, UnidentifiedImageError
 
-from .common import convert_to_rgb_if_needed, get_save_format
+from .common import convert_to_rgb_if_needed, ensure_parent_dir, get_save_format
 from ..infra.logger import get_logger
 
 
@@ -50,14 +50,16 @@ def run_convert_batch(
     total_after = 0
     total = len(file_list)
 
+    backup_dir = None
     if do_backup and backup_fn:
         try:
-            backup_fn(folder, file_list)
+            backup_dir = backup_fn(folder, file_list)
         except OSError as exc:
             logger.error("Backup failed: %s", exc)
             return {
                 'total_before': 0, 'total_after': 0,
                 'errors': [f'Backup failed: {exc}'], 'cancelled': False,
+                'backup_dir': None,
             }
 
     if not replace and out:
@@ -70,37 +72,37 @@ def run_convert_batch(
         src = os.path.join(folder, fname)
         if not os.path.exists(src):
             errors.append(f'{fname}: source not found')
-            continue
+        else:
+            try:
+                sb = os.path.getsize(src)
+            except OSError as exc:
+                errors.append(f'{fname}: {exc}')
+            else:
+                total_before += sb
+                base = os.path.splitext(fname)[0]
+                new_name = base + target_fmt
+                current_ext = os.path.splitext(fname)[1].lower()
+                dst = src if (replace and target_fmt.lower() == current_ext) else (
+                    os.path.join(folder, new_name) if replace else os.path.join(out, new_name)
+                )
+                if not replace or dst != src:
+                    ensure_parent_dir(dst)
 
-        try:
-            sb = os.path.getsize(src)
-        except OSError as exc:
-            errors.append(f'{fname}: {exc}')
-            continue
-
-        total_before += sb
-        base = os.path.splitext(fname)[0]
-        new_name = base + target_fmt
-        current_ext = os.path.splitext(fname)[1].lower()
-        dst = src if (replace and target_fmt.lower() == current_ext) else (
-            os.path.join(folder, new_name) if replace else os.path.join(out, new_name)
-        )
-
-        try:
-            sa = convert_image(src, dst, target_fmt)
-            total_after += sa
-
-            if replace and target_fmt.lower() != current_ext and os.path.exists(src):
                 try:
-                    os.remove(src)
-                except OSError:
-                    pass
+                    sa = convert_image(src, dst, target_fmt)
+                    total_after += sa
 
-            if on_file_done:
-                on_file_done(fname, new_name, sa)
+                    if replace and target_fmt.lower() != current_ext and os.path.exists(src):
+                        try:
+                            os.remove(src)
+                        except OSError:
+                            pass
 
-        except (UnidentifiedImageError, OSError) as exc:
-            errors.append(f'{fname}: {exc}')
+                    if on_file_done:
+                        on_file_done(fname, new_name, sa)
+
+                except (UnidentifiedImageError, OSError) as exc:
+                    errors.append(f'{fname}: {exc}')
 
         if on_progress:
             pct = (i + 1) / total * 100
@@ -111,4 +113,5 @@ def run_convert_batch(
         'total_after': total_after,
         'errors': errors,
         'cancelled': state.cancelled,
+        'backup_dir': backup_dir,
     }

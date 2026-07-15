@@ -8,6 +8,7 @@ from typing import Callable, List, Optional
 
 from PIL import Image, UnidentifiedImageError
 
+from .common import ensure_parent_dir
 from ..infra.logger import get_logger
 
 
@@ -61,14 +62,16 @@ def run_trim_batch(
 
     total = len(png_list)
 
+    backup_dir = None
     if do_backup and backup_fn:
         try:
-            backup_fn(folder, file_list)
+            backup_dir = backup_fn(folder, file_list)
         except OSError as exc:
             logger.error("Backup failed: %s", exc)
             return {
                 'total_before': 0, 'total_after': 0,
                 'errors': [f'Backup failed: {exc}'], 'cancelled': False,
+                'backup_dir': None,
             }
 
     if not replace and out:
@@ -91,6 +94,8 @@ def run_trim_batch(
 
         total_before += sb
         dst = src if replace else os.path.join(out, fname)
+        if not replace:
+            ensure_parent_dir(dst)
 
         try:
             sa = trim_image(src, dst, padding)
@@ -109,4 +114,5 @@ def run_trim_batch(
         'total_after': total_after,
         'errors': errors,
         'cancelled': state.cancelled,
+        'backup_dir': backup_dir,
     }

@@ -8,7 +8,7 @@ from typing import Callable, List, Optional, Union
 
 from PIL import Image, ImageDraw, ImageFont, UnidentifiedImageError
 
-from .common import calc_position, hex_to_rgba
+from .common import calc_position, ensure_parent_dir, hex_to_rgba
 from ..infra.logger import get_logger
 
 
@@ -101,14 +101,16 @@ def run_watermark_batch(
     total_after = 0
     total = len(file_list)
 
+    backup_dir = None
     if do_backup and backup_fn:
         try:
-            backup_fn(folder, file_list)
+            backup_dir = backup_fn(folder, file_list)
         except OSError as exc:
             logger.error("Backup failed: %s", exc)
             return {
                 'total_before': 0, 'total_after': 0,
                 'errors': [f'Backup failed: {exc}'], 'cancelled': False,
+                'backup_dir': None,
             }
 
     if not replace and out:
@@ -143,6 +145,8 @@ def run_watermark_batch(
 
         total_before += sb
         dst = src if replace else os.path.join(out, fname)
+        if not replace:
+            ensure_parent_dir(dst)
 
         try:
             img = Image.open(src).convert('RGBA')
@@ -194,4 +198,5 @@ def run_watermark_batch(
         'total_after': total_after,
         'errors': errors,
         'cancelled': state.cancelled,
+        'backup_dir': backup_dir,
     }
