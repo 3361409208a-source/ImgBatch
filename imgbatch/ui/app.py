@@ -9,6 +9,8 @@ threading, settings, and operation history.
 
 import ctypes
 import os
+import subprocess
+import sys
 import threading
 import time
 import tkinter as tk
@@ -124,6 +126,7 @@ class ImgBatchApp:
         self._progress_anim_id = None
         self._status_anim_id = None
         self._preview_after_id = None
+        self._preview_gen = 0
 
         # Compress vars
         self.c_compress_ratio = tk.IntVar(value=self.config.get('compress_ratio', 75))
@@ -739,10 +742,19 @@ class ImgBatchApp:
         fname = self.tree.item(sel[0], 'values')[0]
         path = os.path.join(self.folder.get(), fname)
         if os.path.exists(path):
-            try:
-                Image.open(path).show()
-            except (UnidentifiedImageError, OSError) as exc:
-                messagebox.showerror(tr('preview_failed'), str(exc))
+            self._open_image_externally(path)
+
+    def _open_image_externally(self, path: str) -> None:
+        """Open an image with the system default viewer (non-blocking)."""
+        try:
+            if os.name == 'nt':
+                os.startfile(path)  # type: ignore[attr-defined]
+            elif sys.platform == 'darwin':
+                subprocess.Popen(['open', path])
+            else:
+                subprocess.Popen(['xdg-open', path])
+        except OSError as exc:
+            messagebox.showerror(tr('preview_failed'), str(exc))
 
     def _on_tree_select(self, event=None):
         sel = self.tree.selection()
@@ -751,36 +763,66 @@ class ImgBatchApp:
             return
         fname = self.tree.item(sel[0], 'values')[0]
         path = os.path.join(self.folder.get(), fname)
-        self._update_preview_panel(path)
+        self._request_preview_panel(path)
 
-    def _update_preview_panel(self, path):
+    def _request_preview_panel(self, path: str) -> None:
+        self._preview_gen += 1
+        gen = self._preview_gen
         if not path or not os.path.exists(path):
             self._clear_preview()
             return
+        cw = self.preview_canvas.winfo_width()
+        ch = self.preview_canvas.winfo_height()
+        if cw <= 1:
+            cw = 260
+        if ch <= 1:
+            ch = 260
+        threading.Thread(
+            target=self._load_preview_worker,
+            args=(path, gen, cw, ch),
+            daemon=True,
+        ).start()
+
+    def _load_preview_worker(self, path: str, gen: int, cw: int, ch: int) -> None:
         try:
-            img = Image.open(path)
+            with Image.open(path) as img:
+                info = f'{img.width}x{img.height} | {img.format or "?"}'
+                scale = min(cw / img.width, ch / img.height, 1.0)
+                nw, nh = int(img.width * scale), int(img.height * scale)
+                if nw < 1 or nh < 1:
+                    self._schedule_on_main(self._clear_preview_if_gen, gen)
+                    return
+                thumb = img.copy()
+                thumb.thumbnail((nw, nh), Image.LANCZOS)
+            self._schedule_on_main(self._apply_preview_panel, gen, thumb, info)
+        except (UnidentifiedImageError, OSError):
+            self._schedule_on_main(self._clear_preview_if_gen, gen)
+
+    def _clear_preview_if_gen(self, gen: int) -> None:
+        if gen == self._preview_gen:
+            self._clear_preview()
+
+    def _apply_preview_panel(self, gen: int, thumb: Image.Image, info: str) -> None:
+        if gen != self._preview_gen:
+            return
+        try:
+            self.preview_tk_img = ImageTk.PhotoImage(thumb)
             cw = self.preview_canvas.winfo_width()
             ch = self.preview_canvas.winfo_height()
             if cw <= 1:
                 cw = 260
             if ch <= 1:
                 ch = 260
-            scale = min(cw / img.width, ch / img.height, 1.0)
-            nw, nh = int(img.width * scale), int(img.height * scale)
-            if nw < 1 or nh < 1:
-                self._clear_preview()
-                return
-            thumb = img.copy()
-            thumb.thumbnail((nw, nh), Image.LANCZOS)
-            self.preview_tk_img = ImageTk.PhotoImage(thumb)
             self.preview_canvas.delete('all')
             x = max((cw - self.preview_tk_img.width()) // 2, 0)
             y = max((ch - self.preview_tk_img.height()) // 2, 0)
             self.preview_canvas.create_image(x, y, anchor=tk.NW, image=self.preview_tk_img)
-            info = f'{img.width}x{img.height} | {img.format or "?"}'
             self.preview_info.config(text=info)
-        except (UnidentifiedImageError, OSError):
+        except tk.TclError:
             self._clear_preview()
+
+    def _update_preview_panel(self, path):
+        self._request_preview_panel(path)
 
     def _clear_preview(self):
         self.preview_canvas.delete('all')
