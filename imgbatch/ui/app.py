@@ -36,6 +36,7 @@ from ..core.watermark import run_watermark_batch
 from ..core.trim import run_trim_batch
 from ..core.normalize import run_normalize_batch
 from ..core.inspect import run_inspect_batch
+from ..core.spritesheet import run_spritesheet_build, LAYOUTS
 from ..core.ai_rename import run_ai_rename, apply_ai_rename, DEFAULT_PROMPT
 from ..history import HistoryManager, OperationRecord, undo_operation
 from ..infra.logger import get_logger, log_operation
@@ -193,6 +194,18 @@ class ImgBatchApp:
         self.n_replace = tk.BooleanVar(value=self.config.get('normalize_replace', True))
         self.n_outfolder = tk.StringVar(value=self.config.get('normalize_output_folder', ''))
         self.n_backup = tk.BooleanVar(value=self.config.get('normalize_backup', True))
+
+        # Sprite sheet vars
+        self.ss_layout = tk.StringVar(value=self.config.get('spritesheet_layout', 'auto'))
+        self.ss_spacing = tk.IntVar(value=self.config.get('spritesheet_spacing', 2))
+        self.ss_trim = tk.BooleanVar(value=self.config.get('spritesheet_trim', True))
+        self.ss_trim_padding = tk.IntVar(value=self.config.get('spritesheet_trim_padding', 2))
+        self.ss_alpha_threshold = tk.IntVar(value=self.config.get('spritesheet_alpha_threshold', 28))
+        self.ss_columns = tk.IntVar(value=self.config.get('spritesheet_columns', 0))
+        self.ss_max_width = tk.IntVar(value=self.config.get('spritesheet_max_width', 0))
+        self.ss_power_of_two = tk.BooleanVar(value=self.config.get('spritesheet_power_of_two', False))
+        self.ss_export_json = tk.BooleanVar(value=self.config.get('spritesheet_export_json', True))
+        self.ss_output = tk.StringVar(value=self.config.get('spritesheet_output', ''))
 
         # EXIF + recursive
         self.exif_mode = tk.StringVar(value=self.config.get('exif_mode', 'keep'))
@@ -359,6 +372,7 @@ class ImgBatchApp:
         self._tab_trim()
         self._tab_inspect()
         self._tab_normalize()
+        self._tab_spritesheet()
         self.notebook.bind('<<NotebookTabChanged>>', self._on_tab_changed)
 
         # Status bar + animation
@@ -414,7 +428,8 @@ class ImgBatchApp:
         # Update tab texts
         for i, tab_id in enumerate(self.notebook.tabs()):
             key = ['tab_compress', 'tab_format', 'tab_rename', 'tab_watermark',
-                   'tab_airename', 'tab_trim', 'tab_inspect', 'tab_normalize'][i]
+                   'tab_airename', 'tab_trim', 'tab_inspect', 'tab_normalize',
+                   'tab_spritesheet'][i]
             try:
                 self.notebook.tab(tab_id, text=' ' + tr(key) + ' ')
             except Exception:
@@ -1655,6 +1670,163 @@ class ImgBatchApp:
             on_error=self._on_op_error,
         )
 
+    # ═══════════════════════ Sprite Sheet Tab ═══════════════════════
+
+    def _tab_spritesheet(self):
+        tab = ttk.Frame(self.notebook)
+        self.notebook.add(tab, text=' ' + tr('tab_spritesheet') + ' ')
+        f = ttk.Frame(tab)
+        f.pack(fill=tk.X, padx=10, pady=8)
+
+        r1 = ttk.Frame(f); r1.pack(fill=tk.X, pady=2)
+        ttk.Label(r1, text=tr('spritesheet_layout'), width=12).pack(side=tk.LEFT)
+        self.ss_layout_combo = ttk.Combobox(
+            r1, width=16, state='readonly',
+            values=[tr('layout_auto'), tr('layout_grid'),
+                    tr('layout_horizontal'), tr('layout_vertical')],
+        )
+        layout_idx = LAYOUTS.index(self.ss_layout.get()) if self.ss_layout.get() in LAYOUTS else 0
+        self.ss_layout_combo.current(layout_idx)
+        self.ss_layout_combo.pack(side=tk.LEFT, padx=4)
+
+        r2 = ttk.Frame(f); r2.pack(fill=tk.X, pady=2)
+        ttk.Label(r2, text=tr('spritesheet_spacing'), width=12).pack(side=tk.LEFT)
+        tk.Spinbox(r2, from_=0, to=50, textvariable=self.ss_spacing, width=5,
+                   bg=ENTRY_BG, fg=FG, insertbackground=FG,
+                   highlightthickness=0, borderwidth=0).pack(side=tk.LEFT, padx=4)
+        ttk.Checkbutton(r2, text=tr('spritesheet_trim'), variable=self.ss_trim).pack(side=tk.LEFT, padx=12)
+
+        r3 = ttk.Frame(f); r3.pack(fill=tk.X, pady=2)
+        ttk.Label(r3, text=tr('padding'), width=12).pack(side=tk.LEFT)
+        tk.Spinbox(r3, from_=0, to=50, textvariable=self.ss_trim_padding, width=5,
+                   bg=ENTRY_BG, fg=FG, insertbackground=FG,
+                   highlightthickness=0, borderwidth=0).pack(side=tk.LEFT, padx=4)
+        ttk.Label(r3, text=tr('alpha_threshold'), width=12).pack(side=tk.LEFT, padx=(8, 0))
+        tk.Spinbox(r3, from_=1, to=255, textvariable=self.ss_alpha_threshold, width=5,
+                   bg=ENTRY_BG, fg=FG, insertbackground=FG,
+                   highlightthickness=0, borderwidth=0).pack(side=tk.LEFT, padx=4)
+
+        r4 = ttk.Frame(f); r4.pack(fill=tk.X, pady=2)
+        ttk.Label(r4, text=tr('spritesheet_columns'), width=12).pack(side=tk.LEFT)
+        tk.Spinbox(r4, from_=0, to=64, textvariable=self.ss_columns, width=5,
+                   bg=ENTRY_BG, fg=FG, insertbackground=FG,
+                   highlightthickness=0, borderwidth=0).pack(side=tk.LEFT, padx=4)
+        ttk.Label(r4, text=tr('spritesheet_columns_hint')).pack(side=tk.LEFT, padx=4)
+        ttk.Label(r4, text=tr('spritesheet_max_width'), width=12).pack(side=tk.LEFT, padx=(8, 0))
+        tk.Spinbox(r4, from_=0, to=8192, textvariable=self.ss_max_width, width=6,
+                   bg=ENTRY_BG, fg=FG, insertbackground=FG,
+                   highlightthickness=0, borderwidth=0).pack(side=tk.LEFT, padx=4)
+        ttk.Label(r4, text=tr('spritesheet_max_width_hint')).pack(side=tk.LEFT, padx=4)
+
+        r5 = ttk.Frame(f); r5.pack(fill=tk.X, pady=2)
+        ttk.Checkbutton(r5, text=tr('spritesheet_power_of_two'),
+                        variable=self.ss_power_of_two).pack(side=tk.LEFT)
+        ttk.Checkbutton(r5, text=tr('spritesheet_export_json'),
+                        variable=self.ss_export_json).pack(side=tk.LEFT, padx=12)
+
+        r6 = ttk.Frame(f); r6.pack(fill=tk.X, pady=4)
+        ttk.Label(r6, text=tr('spritesheet_output'), width=12).pack(side=tk.LEFT)
+        ttk.Entry(r6, textvariable=self.ss_output, width=40).pack(side=tk.LEFT, padx=4, fill=tk.X, expand=True)
+        ttk.Button(r6, text=tr('browse'), command=self._browse_spritesheet_output).pack(side=tk.LEFT)
+
+        r7 = ttk.Frame(f); r7.pack(fill=tk.X, pady=6)
+        ttk.Button(r7, text=tr('start_spritesheet'),
+                   command=self._run_spritesheet).pack(side=tk.RIGHT, ipadx=8)
+
+    def _layout_key_from_combo(self) -> str:
+        idx = self.ss_layout_combo.current()
+        return LAYOUTS[idx] if 0 <= idx < len(LAYOUTS) else LAYOUTS[0]
+
+    def _browse_spritesheet_output(self):
+        folder = self.folder.get() or os.path.expanduser('~')
+        path = filedialog.asksaveasfilename(
+            title=tr('spritesheet_output'),
+            initialdir=folder,
+            initialfile='spritesheet.png',
+            defaultextension='.png',
+            filetypes=[('PNG', '*.png')],
+        )
+        if path:
+            self.ss_output.set(os.path.normpath(path))
+
+    def _collect_image_paths(self) -> List[str]:
+        """Collect full paths of images to include in sprite sheet."""
+        if self.target_mode.get() == 'multi':
+            return [p for p in self.multi_paths if os.path.isfile(p)]
+        folder = self.folder.get()
+        if not folder:
+            return []
+        return [os.path.join(folder, d['name']) for d in self.file_data]
+
+    def _run_spritesheet(self):
+        if self.task_runner.is_running:
+            return
+
+        image_paths = self._collect_image_paths()
+        if len(image_paths) < 2:
+            messagebox.showwarning(tr('notice'), tr('spritesheet_need_two'))
+            return
+
+        output = self.ss_output.get().strip()
+        if not output:
+            folder = self.folder.get() or os.path.dirname(image_paths[0])
+            output = os.path.join(folder, 'spritesheet.png')
+            self.ss_output.set(output)
+
+        layout = self._layout_key_from_combo()
+        log_operation('spritesheet', files=len(image_paths), layout=layout,
+                      output=output)
+
+        self._set_running_ui(True)
+        self.task_runner.start(
+            run_spritesheet_build,
+            image_paths, output,
+            layout=layout,
+            spacing=self.ss_spacing.get(),
+            trim=self.ss_trim.get(),
+            trim_padding=self.ss_trim_padding.get(),
+            alpha_threshold=self.ss_alpha_threshold.get(),
+            columns=self.ss_columns.get(),
+            max_width=self.ss_max_width.get(),
+            power_of_two=self.ss_power_of_two.get(),
+            export_json=self.ss_export_json.get(),
+            on_progress=self._on_progress,
+            on_complete=self._on_spritesheet_complete,
+            on_error=self._on_op_error,
+        )
+
+    def _on_spritesheet_complete(self, result: dict):
+        self._schedule_on_main(self._finish_spritesheet_complete, result)
+
+    def _finish_spritesheet_complete(self, result: dict):
+        self._stop_spinner()
+        self._clear_highlight()
+        errors = result.get('errors', [])
+        cancelled = result.get('cancelled', False)
+
+        if cancelled:
+            self._set_status(tr('operation_cancelled'))
+        elif errors and not result.get('output_path'):
+            self._set_status(tr('error'))
+        else:
+            w, h = result.get('sheet_size', (0, 0))
+            n = result.get('frame_count', 0)
+            self._set_status(tr('spritesheet_done', w=w, h=h, n=n))
+            out = result.get('output_path', '')
+            if out:
+                self._preview_path(out)
+
+        self._set_running_ui(False)
+
+        if errors:
+            self.root.after(200, lambda errs=errors: messagebox.showwarning(
+                tr('done'), '\n'.join(errs[:5])))
+
+    def _preview_path(self, path: str):
+        """Show a file in the preview panel."""
+        if os.path.isfile(path):
+            self._request_preview_panel(path)
+
     # ═══════════════════════ Common UI Helpers ═══════════════════════
 
     def _schedule_on_main(self, fn: Callable, *args, **kwargs) -> None:
@@ -1972,6 +2144,16 @@ class ImgBatchApp:
         self.config['normalize_replace'] = self.n_replace.get()
         self.config['normalize_backup'] = self.n_backup.get()
         self.config['normalize_output_folder'] = self.n_outfolder.get()
+        self.config['spritesheet_layout'] = self._layout_key_from_combo()
+        self.config['spritesheet_spacing'] = self.ss_spacing.get()
+        self.config['spritesheet_trim'] = self.ss_trim.get()
+        self.config['spritesheet_trim_padding'] = self.ss_trim_padding.get()
+        self.config['spritesheet_alpha_threshold'] = self.ss_alpha_threshold.get()
+        self.config['spritesheet_columns'] = self.ss_columns.get()
+        self.config['spritesheet_max_width'] = self.ss_max_width.get()
+        self.config['spritesheet_power_of_two'] = self.ss_power_of_two.get()
+        self.config['spritesheet_export_json'] = self.ss_export_json.get()
+        self.config['spritesheet_output'] = self.ss_output.get()
         self.config['exif_mode'] = self.exif_mode.get()
         self.config['recursive_scan'] = self.recursive_scan.get()
         save_config(self.config)

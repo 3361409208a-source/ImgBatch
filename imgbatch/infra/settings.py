@@ -75,6 +75,17 @@ DEFAULT_CONFIG: Dict[str, Any] = {
     "normalize_output_folder": "",
     # EXIF
     "exif_mode": "keep",  # keep | strip | orientation_only
+    # Sprite sheet
+    "spritesheet_layout": "auto",
+    "spritesheet_spacing": 2,
+    "spritesheet_trim": True,
+    "spritesheet_trim_padding": 2,
+    "spritesheet_alpha_threshold": 28,
+    "spritesheet_columns": 0,
+    "spritesheet_max_width": 0,
+    "spritesheet_power_of_two": False,
+    "spritesheet_export_json": True,
+    "spritesheet_output": "",
     # Recursive scan
     "recursive_scan": False,
 }

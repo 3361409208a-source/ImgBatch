@@ -29,6 +29,7 @@ from ..core.watermark import run_watermark_batch
 from ..core.trim import run_trim_batch
 from ..core.normalize import run_normalize_batch
 from ..core.inspect import run_inspect_batch
+from ..core.spritesheet import run_spritesheet_build, LAYOUTS
 from ..core.ai_rename import run_ai_rename, apply_ai_rename, DEFAULT_PROMPT
 from ..infra.logger import get_logger
 from ..infra.threading import TaskState
@@ -255,6 +256,57 @@ def cmd_inspect(args):
     return 0
 
 
+def cmd_spritesheet(args):
+    folder = os.path.abspath(args.folder)
+    files = scan_folder(folder, recursive=args.recursive)
+    if not files:
+        print('No supported images found.')
+        return 1
+
+    file_list = [f['name'] for f in files]
+    image_paths = [os.path.join(folder, name) for name in file_list]
+    output = args.output or os.path.join(folder, 'spritesheet.png')
+
+    print(f'Building sprite sheet from {len(image_paths)} images...')
+    state = CLITaskState()
+    result = run_spritesheet_build(
+        state, image_paths, output,
+        layout=args.layout,
+        spacing=args.spacing,
+        trim=not args.no_trim,
+        trim_padding=args.trim_padding,
+        alpha_threshold=args.alpha_threshold,
+        columns=args.columns,
+        max_width=args.max_width,
+        power_of_two=args.power_of_two,
+        export_json=not args.no_json,
+        on_progress=_on_progress_cli(state),
+    )
+
+    if result.get('cancelled'):
+        print('Sprite sheet build cancelled.')
+        return 1
+
+    errors = result.get('errors', [])
+    if errors and not result.get('output_path'):
+        print('Sprite sheet build failed:')
+        for e in errors:
+            print(f'  {e}')
+        return 1
+
+    w, h = result.get('sheet_size', (0, 0))
+    n = result.get('frame_count', 0)
+    print(f'\nSprite sheet complete: {w}x{h}, {n} frames')
+    print(f'  Output: {result.get("output_path")}')
+    if result.get('json_path'):
+        print(f'  JSON:   {result.get("json_path")}')
+    if errors:
+        print(f'  Warnings: {len(errors)}')
+        for e in errors[:5]:
+            print(f'    {e}')
+    return 0
+
+
 def cmd_ai_rename(args):
     folder = os.path.abspath(args.folder)
     files = scan_folder(folder, recursive=args.recursive)
@@ -406,6 +458,23 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument('--folder', '-f', required=True, help='Target folder')
     p.add_argument('--recursive', '-r', action='store_true', help='Include subdirectories')
     p.set_defaults(func=cmd_inspect)
+
+    # spritesheet
+    p = subparsers.add_parser('spritesheet', help='Build a smart sprite sheet atlas')
+    p.add_argument('--folder', '-f', required=True, help='Target folder')
+    p.add_argument('--recursive', '-r', action='store_true', help='Include subdirectories')
+    p.add_argument('--output', '-o', help='Output PNG path (default: folder/spritesheet.png)')
+    p.add_argument('--layout', choices=LAYOUTS, default='auto',
+                   help='Layout mode (default: auto)')
+    p.add_argument('--spacing', type=int, default=2, help='Spacing pixels (default: 2)')
+    p.add_argument('--no-trim', action='store_true', help='Disable auto-trim transparent edges')
+    p.add_argument('--trim-padding', type=int, default=2, help='Trim padding (default: 2)')
+    p.add_argument('--alpha-threshold', type=int, default=28, help='Alpha threshold (default: 28)')
+    p.add_argument('--columns', type=int, default=0, help='Grid columns, 0=auto (default: 0)')
+    p.add_argument('--max-width', type=int, default=0, help='Max row width, 0=smart (default: 0)')
+    p.add_argument('--power-of-two', action='store_true', help='Round canvas to power-of-2')
+    p.add_argument('--no-json', action='store_true', help='Skip JSON metadata export')
+    p.set_defaults(func=cmd_spritesheet)
 
     # ai-rename
     p = subparsers.add_parser('ai-rename', help='AI-powered rename via DeepSeek')
