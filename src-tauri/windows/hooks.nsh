@@ -21,10 +21,10 @@
   WriteRegStr SHCTX "Software\Microsoft\Windows\CurrentVersion\Explorer\CommandStore\shell\${STORE_ID}" "SubCommands" "${SUBCOMMANDS}"
 !macroend
 
-!macro ImgBatchWriteClassParent ROOT SUBCOMMANDS
-  WriteRegStr SHCTX "Software\Classes\${ROOT}\shell\ImgBatch" "MUIVerb" "ImgBatch"
-  WriteRegStr SHCTX "Software\Classes\${ROOT}\shell\ImgBatch" "Icon" "$INSTDIR\imgbatch.exe,0"
-  WriteRegStr SHCTX "Software\Classes\${ROOT}\shell\ImgBatch" "SubCommands" "${SUBCOMMANDS}"
+!macro ImgBatchWriteClassCascade ROOT SHELLKEY LABEL SUBCOMMANDS
+  WriteRegStr SHCTX "Software\Classes\${ROOT}\shell\${SHELLKEY}" "MUIVerb" "ImgBatch ${LABEL}"
+  WriteRegStr SHCTX "Software\Classes\${ROOT}\shell\${SHELLKEY}" "Icon" "$INSTDIR\imgbatch.exe,0"
+  WriteRegStr SHCTX "Software\Classes\${ROOT}\shell\${SHELLKEY}" "SubCommands" "${SUBCOMMANDS}"
 !macroend
 
 !macro ImgBatchDeleteFlat ROOT
@@ -322,19 +322,42 @@
   !insertmacro ImgBatchWriteQuickVerb "ImgBatch.dir.gif.wm" "加水印" "gif --gif-mode watermark --auto-run" "%V"
   !insertmacro ImgBatchWriteQuickVerb "ImgBatch.dir.gif.extract" "拆帧导出" "gif --gif-mode extract --auto-run" "%V"
 
-  ; ── Misc flat group (trim / normalize / inspect / common GIF) ──
-  !insertmacro ImgBatchWriteParent "ImgBatch.misc" "其他工具" "ImgBatch.trim.p0;ImgBatch.trim.p4;ImgBatch.trim.p8;ImgBatch.normalize.h280;ImgBatch.normalize.h512;ImgBatch.normalize.h1024;ImgBatch.inspect.quick;ImgBatch.inspect.open;ImgBatch.gif.optimize;ImgBatch.gif.resize50;ImgBatch.gif.reverse;ImgBatch.gif.extract"
-  !insertmacro ImgBatchWriteParent "ImgBatch.dir.misc" "其他工具" "ImgBatch.dir.trim.p0;ImgBatch.dir.trim.p4;ImgBatch.dir.trim.p8;ImgBatch.dir.normalize.h280;ImgBatch.dir.normalize.h512;ImgBatch.dir.normalize.h1024;ImgBatch.dir.inspect.quick;ImgBatch.dir.inspect.open;ImgBatch.dir.gif.optimize;ImgBatch.dir.gif.resize50;ImgBatch.dir.gif.reverse;ImgBatch.dir.gif.extract"
+  ; ── Each feature as its own top-level context-menu entry ──
+  !insertmacro ImgBatchWriteClassCascade "*" "ImgBatchCompress" "压缩" "ImgBatch.compress.high;ImgBatch.compress.standard;ImgBatch.compress.max;ImgBatch.compress.thumb"
+  !insertmacro ImgBatchWriteClassCascade "*" "ImgBatchConvert" "格式转换" "ImgBatch.convert.png;ImgBatch.convert.jpg;ImgBatch.convert.webp;ImgBatch.convert.bmp;ImgBatch.convert.tiff;ImgBatch.convert.gif;ImgBatch.convert.ico"
+  !insertmacro ImgBatchWriteClassCascade "*" "ImgBatchRename" "重命名" "ImgBatch.rename.prefix;ImgBatch.rename.lower;ImgBatch.rename.upper;ImgBatch.rename.suffix"
+  !insertmacro ImgBatchWriteClassCascade "*" "ImgBatchWatermark" "水印" "ImgBatch.watermark.br;ImgBatch.watermark.center;ImgBatch.watermark.tl;ImgBatch.watermark.copy"
+  !insertmacro ImgBatchWriteClassCascade "*" "ImgBatchTrim" "裁边" "ImgBatch.trim.p0;ImgBatch.trim.p4;ImgBatch.trim.p8"
+  !insertmacro ImgBatchWriteClassCascade "*" "ImgBatchNormalize" "规范化" "ImgBatch.normalize.h280;ImgBatch.normalize.h512;ImgBatch.normalize.h1024"
+  !insertmacro ImgBatchWriteClassCascade "*" "ImgBatchInspect" "检查" "ImgBatch.inspect.quick;ImgBatch.inspect.open"
+  !insertmacro ImgBatchWriteClassCascade "*" "ImgBatchGif" "GIF 动图" "ImgBatch.gif.optimize;ImgBatch.gif.resize50;ImgBatch.gif.resize75;ImgBatch.gif.colors;ImgBatch.gif.speed2;ImgBatch.gif.speed05;ImgBatch.gif.reverse;ImgBatch.gif.trim;ImgBatch.gif.wm;ImgBatch.gif.extract"
 
-  ; ── More submenu (rename / watermark / misc) ──
-  !insertmacro ImgBatchWriteParent "ImgBatch.more" "更多" "ImgBatch.rename;ImgBatch.watermark;ImgBatch.misc"
-  !insertmacro ImgBatchWriteParent "ImgBatch.dir.more" "更多" "ImgBatch.dir.rename;ImgBatch.dir.watermark;ImgBatch.dir.misc"
+  !insertmacro ImgBatchWriteClassCascade "Directory" "ImgBatchCompress" "压缩" "ImgBatch.dir.compress.high;ImgBatch.dir.compress.standard;ImgBatch.dir.compress.max;ImgBatch.dir.compress.thumb"
+  !insertmacro ImgBatchWriteClassCascade "Directory" "ImgBatchConvert" "格式转换" "ImgBatch.dir.convert.png;ImgBatch.dir.convert.jpg;ImgBatch.dir.convert.webp;ImgBatch.dir.convert.bmp;ImgBatch.dir.convert.tiff;ImgBatch.dir.convert.gif;ImgBatch.dir.convert.ico"
+  !insertmacro ImgBatchWriteClassCascade "Directory" "ImgBatchRename" "重命名" "ImgBatch.dir.rename.prefix;ImgBatch.dir.rename.lower;ImgBatch.dir.rename.upper;ImgBatch.dir.rename.suffix"
+  !insertmacro ImgBatchWriteClassCascade "Directory" "ImgBatchWatermark" "水印" "ImgBatch.dir.watermark.br;ImgBatch.dir.watermark.center;ImgBatch.dir.watermark.tl;ImgBatch.dir.watermark.copy"
+  !insertmacro ImgBatchWriteClassCascade "Directory" "ImgBatchTrim" "裁边" "ImgBatch.dir.trim.p0;ImgBatch.dir.trim.p4;ImgBatch.dir.trim.p8"
+  !insertmacro ImgBatchWriteClassCascade "Directory" "ImgBatchNormalize" "规范化" "ImgBatch.dir.normalize.h280;ImgBatch.dir.normalize.h512;ImgBatch.dir.normalize.h1024"
+  !insertmacro ImgBatchWriteClassCascade "Directory" "ImgBatchInspect" "检查" "ImgBatch.dir.inspect.quick;ImgBatch.dir.inspect.open"
+  !insertmacro ImgBatchWriteClassCascade "Directory" "ImgBatchGif" "GIF 动图" "ImgBatch.dir.gif.optimize;ImgBatch.dir.gif.resize50;ImgBatch.dir.gif.resize75;ImgBatch.dir.gif.colors;ImgBatch.dir.gif.speed2;ImgBatch.dir.gif.speed05;ImgBatch.dir.gif.reverse;ImgBatch.dir.gif.trim;ImgBatch.dir.gif.wm;ImgBatch.dir.gif.extract"
 
-  ; ── Single top-level ImgBatch (Windows shows ~3 cascades) ──
-  !insertmacro ImgBatchWriteClassParent "*" "ImgBatch.compress;ImgBatch.convert;ImgBatch.more"
-  !insertmacro ImgBatchWriteClassParent "Directory" "ImgBatch.dir.compress;ImgBatch.dir.convert;ImgBatch.dir.more"
-  !insertmacro ImgBatchWriteClassParent "Directory\Background" "ImgBatch.dir.compress;ImgBatch.dir.convert;ImgBatch.dir.more"
-  !insertmacro ImgBatchWriteClassParent "SystemFileAssociations\image" "ImgBatch.compress;ImgBatch.convert;ImgBatch.more"
+  !insertmacro ImgBatchWriteClassCascade "Directory\Background" "ImgBatchCompress" "压缩" "ImgBatch.dir.compress.high;ImgBatch.dir.compress.standard;ImgBatch.dir.compress.max;ImgBatch.dir.compress.thumb"
+  !insertmacro ImgBatchWriteClassCascade "Directory\Background" "ImgBatchConvert" "格式转换" "ImgBatch.dir.convert.png;ImgBatch.dir.convert.jpg;ImgBatch.dir.convert.webp;ImgBatch.dir.convert.bmp;ImgBatch.dir.convert.tiff;ImgBatch.dir.convert.gif;ImgBatch.dir.convert.ico"
+  !insertmacro ImgBatchWriteClassCascade "Directory\Background" "ImgBatchRename" "重命名" "ImgBatch.dir.rename.prefix;ImgBatch.dir.rename.lower;ImgBatch.dir.rename.upper;ImgBatch.dir.rename.suffix"
+  !insertmacro ImgBatchWriteClassCascade "Directory\Background" "ImgBatchWatermark" "水印" "ImgBatch.dir.watermark.br;ImgBatch.dir.watermark.center;ImgBatch.dir.watermark.tl;ImgBatch.dir.watermark.copy"
+  !insertmacro ImgBatchWriteClassCascade "Directory\Background" "ImgBatchTrim" "裁边" "ImgBatch.dir.trim.p0;ImgBatch.dir.trim.p4;ImgBatch.dir.trim.p8"
+  !insertmacro ImgBatchWriteClassCascade "Directory\Background" "ImgBatchNormalize" "规范化" "ImgBatch.dir.normalize.h280;ImgBatch.dir.normalize.h512;ImgBatch.dir.normalize.h1024"
+  !insertmacro ImgBatchWriteClassCascade "Directory\Background" "ImgBatchInspect" "检查" "ImgBatch.dir.inspect.quick;ImgBatch.dir.inspect.open"
+  !insertmacro ImgBatchWriteClassCascade "Directory\Background" "ImgBatchGif" "GIF 动图" "ImgBatch.dir.gif.optimize;ImgBatch.dir.gif.resize50;ImgBatch.dir.gif.resize75;ImgBatch.dir.gif.colors;ImgBatch.dir.gif.speed2;ImgBatch.dir.gif.speed05;ImgBatch.dir.gif.reverse;ImgBatch.dir.gif.trim;ImgBatch.dir.gif.wm;ImgBatch.dir.gif.extract"
+
+  !insertmacro ImgBatchWriteClassCascade "SystemFileAssociations\image" "ImgBatchCompress" "压缩" "ImgBatch.compress.high;ImgBatch.compress.standard;ImgBatch.compress.max;ImgBatch.compress.thumb"
+  !insertmacro ImgBatchWriteClassCascade "SystemFileAssociations\image" "ImgBatchConvert" "格式转换" "ImgBatch.convert.png;ImgBatch.convert.jpg;ImgBatch.convert.webp;ImgBatch.convert.bmp;ImgBatch.convert.tiff;ImgBatch.convert.gif;ImgBatch.convert.ico"
+  !insertmacro ImgBatchWriteClassCascade "SystemFileAssociations\image" "ImgBatchRename" "重命名" "ImgBatch.rename.prefix;ImgBatch.rename.lower;ImgBatch.rename.upper;ImgBatch.rename.suffix"
+  !insertmacro ImgBatchWriteClassCascade "SystemFileAssociations\image" "ImgBatchWatermark" "水印" "ImgBatch.watermark.br;ImgBatch.watermark.center;ImgBatch.watermark.tl;ImgBatch.watermark.copy"
+  !insertmacro ImgBatchWriteClassCascade "SystemFileAssociations\image" "ImgBatchTrim" "裁边" "ImgBatch.trim.p0;ImgBatch.trim.p4;ImgBatch.trim.p8"
+  !insertmacro ImgBatchWriteClassCascade "SystemFileAssociations\image" "ImgBatchNormalize" "规范化" "ImgBatch.normalize.h280;ImgBatch.normalize.h512;ImgBatch.normalize.h1024"
+  !insertmacro ImgBatchWriteClassCascade "SystemFileAssociations\image" "ImgBatchInspect" "检查" "ImgBatch.inspect.quick;ImgBatch.inspect.open"
+  !insertmacro ImgBatchWriteClassCascade "SystemFileAssociations\image" "ImgBatchGif" "GIF 动图" "ImgBatch.gif.optimize;ImgBatch.gif.resize50;ImgBatch.gif.resize75;ImgBatch.gif.colors;ImgBatch.gif.speed2;ImgBatch.gif.speed05;ImgBatch.gif.reverse;ImgBatch.gif.trim;ImgBatch.gif.wm;ImgBatch.gif.extract"
 !macroend
 
 !macro NSIS_HOOK_POSTUNINSTALL

@@ -4,6 +4,7 @@ import { Sparkles, Check, ExternalLink, ClipboardPaste } from 'lucide-react';
 import { api } from '../api/client';
 import { useAppStore } from '../store/appStore';
 import { buildExternalAiRenamePrompt } from '../utils/aiRenamePrompt';
+import { parseAiRenameLocally } from '../utils/parseAiRename';
 
 export function AiRenamePage() {
   const { t } = useTranslation();
@@ -76,6 +77,13 @@ export function AiRenamePage() {
     }
 
     setParseError('');
+    const local = parseAiRenameLocally(pasteContent, fileNames);
+    if (local.errors.length === 0 && Object.keys(local.mapping).length > 0) {
+      setResults(local.mapping);
+      setStatusMessage(t('ai_parse_ok'));
+      return;
+    }
+
     try {
       const res = await api.renameAiParse(pasteContent, fileNames);
       if (res.errors.length > 0) {
@@ -84,10 +92,13 @@ export function AiRenamePage() {
       if (Object.keys(res.mapping).length > 0) {
         setResults(res.mapping);
         setStatusMessage(t('ai_parse_ok'));
+        return;
       }
-    } catch (e) {
-      setParseError(String(e));
+    } catch {
+      /* stale sidecar without /rename/ai-parse — local parse already tried */
     }
+
+    setParseError(local.errors.join('\n') || t('ai_parse_failed'));
   };
 
   return (

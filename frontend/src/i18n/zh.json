@@ -74,6 +74,7 @@
   "ai_paste_empty": "请先粘贴 AI 返回的内容",
   "ai_parse_paste": "解析并预览",
   "ai_parse_ok": "已解析 AI 重命名建议",
+  "ai_parse_failed": "无法从粘贴内容中解析出重命名建议，请确认 JSON 格式正确",
   "ai_preview": "AI 建议预览:",
   "orig_name": "原文件名",
   "ai_suggested": "AI 建议名",

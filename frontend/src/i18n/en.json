@@ -74,6 +74,7 @@
   "ai_paste_empty": "Paste the AI response first",
   "ai_parse_paste": "Parse & Preview",
   "ai_parse_ok": "AI rename suggestions parsed",
+  "ai_parse_failed": "Could not parse rename suggestions — check the JSON format",
   "ai_preview": "AI Preview:",
   "orig_name": "Original",
   "ai_suggested": "AI Suggested",
