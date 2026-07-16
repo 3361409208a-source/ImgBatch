@@ -69,7 +69,7 @@ function Write-Store([Microsoft.Win32.RegistryKey]$Hive, [string]$StoreId, [stri
     $key = $Hive.CreateSubKey("Software\Microsoft\Windows\CurrentVersion\Explorer\CommandStore\shell\$StoreId")
     $key.SetValue("MUIVerb", $Label)
     $key.SetValue("Icon", "$ExePath,0")
-    $key.SetValue("MultiSelectModel", "Player")
+    $key.SetValue("MultiSelectModel", "Document")
     $cmd = $key.CreateSubKey("command")
     $cmd.SetValue("", "`"$ExePath`" --quick $Action $ArgToken")
     $cmd.Close()
@@ -88,7 +88,7 @@ $hkcu = [Microsoft.Win32.Registry]::CurrentUser
 Clear-Old $hkcu
 
 foreach ($a in $actions) {
-    Write-Store $hkcu "ImgBatch.$($a.Id)" $a.Label $a.Id '"%1"'
+    Write-Store $hkcu "ImgBatch.$($a.Id)" $a.Label $a.Id '%*'
     Write-Store $hkcu "ImgBatch.dir.$($a.Id)" $a.Label $a.Id '"%V"'
 }
 

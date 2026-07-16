@@ -113,6 +113,7 @@ export const api = {
     apiPut<{ ok: boolean }>('/config', config),
   scan: (folder: string, recursive: boolean) =>
     apiPost<ScanResponse>('/scan', { folder, recursive }),
+  probe: (paths: string[]) => apiPost<ScanResponse>('/probe', { paths }),
   filter: (req: FilterRequest) =>
     apiPost<{ files: FileInfo[] }>('/filter', req),
   compressEstimate: (files: FileInfo[], quality: number, resize_pct: number) =>

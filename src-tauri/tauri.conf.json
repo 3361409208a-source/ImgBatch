@@ -13,6 +13,7 @@
     "windows": [
       {
         "label": "main",
+        "create": false,
         "title": "ImgBatch",
         "width": 1100,
         "height": 850,
@@ -31,9 +32,10 @@
         "minWidth": 360,
         "minHeight": 420,
         "resizable": true,
+        "decorations": false,
         "center": true,
-        "visible": true,
-        "focus": true
+        "visible": false,
+        "focus": false
       }
     ],
     "security": {

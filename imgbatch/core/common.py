@@ -62,25 +62,53 @@ def scan_folder(folder: str, recursive: bool = False) -> List[dict]:
             continue
         if f.suffix.lower() not in SUPPORTED_EXT:
             continue
-        try:
-            size = f.stat().st_size
-        except OSError:
+        info = _file_info(f, folder_path)
+        if info:
+            result.append(info)
+    return result
+
+
+def _file_info(f: Path, folder_path: Optional[Path]) -> Optional[dict]:
+    try:
+        size = f.stat().st_size
+    except OSError:
+        return None
+    try:
+        with Image.open(f) as img:
+            dims = f'{img.width}x{img.height}'
+            fmt = img.format or f.suffix[1:]
+    except (UnidentifiedImageError, OSError):
+        dims = '?'
+        fmt = f.suffix[1:]
+    if folder_path is not None:
+        name = str(f.relative_to(folder_path))
+    else:
+        name = f.name
+    return {
+        'name': name,
+        'path': str(f),
+        'size': size,
+        'size_str': fmt_size(size),
+        'dimensions': dims,
+        'format': fmt,
+    }
+
+
+def probe_files(paths: List[str]) -> List[dict]:
+    """Return metadata for explicit file paths without scanning a folder."""
+    result: List[dict] = []
+    seen: Set[str] = set()
+    for path_str in paths:
+        key = path_str.strip().strip('"').lower()
+        if not key or key in seen:
             continue
-        try:
-            with Image.open(f) as img:
-                dims = f'{img.width}x{img.height}'
-                fmt = img.format or f.suffix[1:]
-        except (UnidentifiedImageError, OSError):
-            dims = '?'
-            fmt = f.suffix[1:]
-        result.append({
-            'name': str(f.relative_to(folder_path)),
-            'path': str(f),
-            'size': size,
-            'size_str': fmt_size(size),
-            'dimensions': dims,
-            'format': fmt,
-        })
+        seen.add(key)
+        f = Path(path_str.strip().strip('"'))
+        if not f.is_file() or f.suffix.lower() not in SUPPORTED_EXT:
+            continue
+        info = _file_info(f, None)
+        if info:
+            result.append(info)
     return result
 
 

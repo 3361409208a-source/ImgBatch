@@ -32,6 +32,10 @@ class ScanResponse(BaseModel):
     files: List[FileInfo]
 
 
+class ProbeRequest(BaseModel):
+    paths: List[str]
+
+
 # ── Filter ───────────────────────────────────────────────────────────────
 
 class FilterRequest(BaseModel):

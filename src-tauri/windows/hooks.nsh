@@ -5,8 +5,8 @@
 !macro ImgBatchWriteStore ACTION LABEL PLACEHOLDER
   WriteRegStr SHCTX "Software\Microsoft\Windows\CurrentVersion\Explorer\CommandStore\shell\ImgBatch.${ACTION}" "MUIVerb" "${LABEL}"
   WriteRegStr SHCTX "Software\Microsoft\Windows\CurrentVersion\Explorer\CommandStore\shell\ImgBatch.${ACTION}" "Icon" "$INSTDIR\imgbatch.exe,0"
-  WriteRegStr SHCTX "Software\Microsoft\Windows\CurrentVersion\Explorer\CommandStore\shell\ImgBatch.${ACTION}" "MultiSelectModel" "Player"
-  WriteRegStr SHCTX "Software\Microsoft\Windows\CurrentVersion\Explorer\CommandStore\shell\ImgBatch.${ACTION}\command" "" '"$INSTDIR\imgbatch.exe" --quick ${ACTION} "${PLACEHOLDER}"'
+  WriteRegStr SHCTX "Software\Microsoft\Windows\CurrentVersion\Explorer\CommandStore\shell\ImgBatch.${ACTION}" "MultiSelectModel" "Document"
+  WriteRegStr SHCTX "Software\Microsoft\Windows\CurrentVersion\Explorer\CommandStore\shell\ImgBatch.${ACTION}\command" "" '"$INSTDIR\imgbatch.exe" --quick ${ACTION} ${PLACEHOLDER}'
 !macroend
 
 !macro ImgBatchWriteParent ROOT
@@ -102,13 +102,13 @@
   !insertmacro ImgBatchDeleteStore
 
   ; CommandStore entries for files (%1) — used by * and image associations
-  !insertmacro ImgBatchWriteStore "compress" "压缩" "%1"
-  !insertmacro ImgBatchWriteStore "convert" "格式转换" "%1"
-  !insertmacro ImgBatchWriteStore "rename" "重命名" "%1"
-  !insertmacro ImgBatchWriteStore "watermark" "水印" "%1"
-  !insertmacro ImgBatchWriteStore "trim" "裁边" "%1"
-  !insertmacro ImgBatchWriteStore "normalize" "规范化" "%1"
-  !insertmacro ImgBatchWriteStore "inspect" "检查" "%1"
+  !insertmacro ImgBatchWriteStore "compress" "压缩" "%*"
+  !insertmacro ImgBatchWriteStore "convert" "格式转换" "%*"
+  !insertmacro ImgBatchWriteStore "rename" "重命名" "%*"
+  !insertmacro ImgBatchWriteStore "watermark" "水印" "%*"
+  !insertmacro ImgBatchWriteStore "trim" "裁边" "%*"
+  !insertmacro ImgBatchWriteStore "normalize" "规范化" "%*"
+  !insertmacro ImgBatchWriteStore "inspect" "检查" "%*"
 
   ; Parent menus: one "ImgBatch" entry with submenu
   !insertmacro ImgBatchWriteParent "*"

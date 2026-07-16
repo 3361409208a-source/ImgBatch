@@ -72,6 +72,11 @@ pub fn get_window_label(window: tauri::Window) -> String {
 }
 
 #[tauri::command]
+pub fn quick_window_ready(app: tauri::AppHandle) -> Result<(), String> {
+    crate::cli::show_quick_window(&app)
+}
+
+#[tauri::command]
 pub fn open_path(path: String) -> Result<(), String> {
     // Use OS default handler without deprecated shell.open
     #[cfg(target_os = "windows")]

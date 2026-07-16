@@ -51,7 +51,7 @@ function Write-Store([string]$StoreId, [string]$Label, [string]$Action, [string]
     $key = [Microsoft.Win32.Registry]::LocalMachine.CreateSubKey("Software\Microsoft\Windows\CurrentVersion\Explorer\CommandStore\shell\$StoreId")
     $key.SetValue("MUIVerb", $Label)
     $key.SetValue("Icon", "$ExePath,0")
-    $key.SetValue("MultiSelectModel", "Player")
+    $key.SetValue("MultiSelectModel", "Document")
     $cmd = $key.CreateSubKey("command")
     $cmd.SetValue("", "`"$ExePath`" --quick $Action $ArgToken")
     $cmd.Close()
@@ -67,7 +67,7 @@ function Write-Parent([string]$ClassRoot, [string]$SubCommands) {
 }
 
 foreach ($a in $actions) {
-    Write-Store "ImgBatch.$($a.Id)" $a.Label $a.Id '"%1"'
+    Write-Store "ImgBatch.$($a.Id)" $a.Label $a.Id '%*'
     Write-Store "ImgBatch.dir.$($a.Id)" $a.Label $a.Id '"%V"'
 }
 Write-Parent "*" $fileSub

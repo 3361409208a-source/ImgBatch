@@ -177,6 +177,17 @@ async function resolveTargets(paths: string[]): Promise<{ folder: string; files:
   return { folder, files, skipped };
 }
 
+async function enrichViaProbe(files: FileInfo[]): Promise<FileInfo[]> {
+  if (files.length === 0) return files;
+  try {
+    const res = await api.probe(files.map((f) => f.path));
+    const byPath = new Map(res.files.map((f) => [f.path.toLowerCase(), f]));
+    return files.map((f) => byPath.get(f.path.toLowerCase()) || f);
+  } catch {
+    return files;
+  }
+}
+
 async function enrichFromScan(folder: string, files: FileInfo[]): Promise<FileInfo[]> {
   if (!folder || files.length === 0) return files;
   try {
@@ -185,6 +196,15 @@ async function enrichFromScan(folder: string, files: FileInfo[]): Promise<FileIn
     return files.map((f) => byName.get(f.name.toLowerCase()) || f);
   } catch {
     return files;
+  }
+}
+
+async function revealQuickWindow() {
+  try {
+    const { invoke } = await import('@tauri-apps/api/core');
+    await invoke('quick_window_ready');
+  } catch {
+    /* browser / non-tauri */
   }
 }
 
@@ -298,7 +318,10 @@ export function QuickActionPage() {
     }
     try {
       const resolved = await resolveTargets(paths);
-      const enriched = await enrichFromScan(resolved.folder, resolved.files);
+      const useProbe = resolved.files.length > 0 && resolved.files.every((f) => looksLikeFile(f.path));
+      const enriched = useProbe
+        ? await enrichViaProbe(resolved.files)
+        : await enrichFromScan(resolved.folder, resolved.files);
       setFolder(resolved.folder);
       setFiles(enriched);
       setSkipped(resolved.skipped);
@@ -309,6 +332,7 @@ export function QuickActionPage() {
       setError(String(e));
     } finally {
       setLoading(false);
+      void revealQuickWindow();
     }
   }, []);
 
@@ -326,6 +350,7 @@ export function QuickActionPage() {
       } catch (e) {
         setError(String(e));
         setLoading(false);
+        void revealQuickWindow();
       }
     })();
     return () => {

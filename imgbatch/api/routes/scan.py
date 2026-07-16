@@ -7,6 +7,7 @@ from imgbatch.core.common import (
     SIZE_PRESETS,
     filter_files,
     parse_kb_to_bytes,
+    probe_files,
     scan_folder,
     parse_dimensions,
 )
@@ -17,6 +18,7 @@ from ..schemas import (
     FileInfo,
     FilterRequest,
     FilterResponse,
+    ProbeRequest,
     RenamePreviewRequest,
     RenamePreviewResponse,
     ScanRequest,
@@ -29,6 +31,12 @@ router = APIRouter()
 @router.post("/scan")
 async def scan(req: ScanRequest) -> ScanResponse:
     files = scan_folder(req.folder, recursive=req.recursive)
+    return ScanResponse(files=[FileInfo(**f) for f in files])
+
+
+@router.post("/probe")
+async def probe(req: ProbeRequest) -> ScanResponse:
+    files = probe_files(req.paths)
     return ScanResponse(files=[FileInfo(**f) for f in files])
 
 

@@ -7,6 +7,7 @@ task creation + completion, task cancellation.
 
 import os
 import time
+from pathlib import Path
 from unittest.mock import patch
 
 import pytest
@@ -43,6 +44,17 @@ def test_scan_with_images(client, tmp_image_dir):
     names = [f["name"] for f in files]
     assert "test1.jpg" in names
     assert "test3.png" in names
+
+
+def test_probe_selected_files(client, tmp_image_dir):
+    p1 = str(Path(tmp_image_dir) / "test1.jpg")
+    p2 = str(Path(tmp_image_dir) / "test3.png")
+    resp = client.post("/probe", json={"paths": [p1, p2]})
+    assert resp.status_code == 200
+    files = resp.json()["files"]
+    assert len(files) == 2
+    names = {f["name"] for f in files}
+    assert names == {"test1.jpg", "test3.png"}
 
 
 # ── Filter ────────────────────────────────────────────────────────────────

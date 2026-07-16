@@ -7,12 +7,16 @@ use std::sync::Mutex;
 use tauri::{Manager, RunEvent, WindowEvent};
 use tauri_plugin_shell::process::CommandChild;
 
-use cli::LaunchPayload;
+use cli::{LaunchPayload, LaunchProfile};
 
 pub struct AppState {
     pub api_port: Mutex<Option<u16>>,
     pub sidecar_child: Mutex<Option<CommandChild>>,
     pub pending_launch: Mutex<Option<LaunchPayload>>,
+    pub launch_profile: Mutex<LaunchProfile>,
+    pub main_hidden_for_quick: Mutex<bool>,
+    pub quick_buffer: Mutex<Option<LaunchPayload>>,
+    pub quick_flush_gen: Mutex<u64>,
 }
 
 impl Default for AppState {
@@ -21,6 +25,10 @@ impl Default for AppState {
             api_port: Mutex::new(None),
             sidecar_child: Mutex::new(None),
             pending_launch: Mutex::new(None),
+            launch_profile: Mutex::new(LaunchProfile::Main),
+            main_hidden_for_quick: Mutex::new(false),
+            quick_buffer: Mutex::new(None),
+            quick_flush_gen: Mutex::new(0),
         }
     }
 }
@@ -35,8 +43,9 @@ pub fn run() {
         .plugin(tauri_plugin_single_instance::init(|app, argv, _cwd| {
             let payload = cli::parse_args_from(argv);
             if payload.quick_action.is_some() {
-                let _ = cli::open_or_focus_quick(app, &payload);
+                let _ = cli::queue_quick_launch(app, &payload);
             } else {
+                let _ = cli::ensure_main_window(app);
                 cli::focus_main(app);
             }
         }))
@@ -54,12 +63,7 @@ pub fn run() {
                 if label == "main" {
                     sidecar::kill_sidecar(&app);
                 } else if label == "quick" {
-                    // Quick-only launch leaves main hidden — exit when popup closes.
-                    if let Some(main) = app.get_webview_window("main") {
-                        if !main.is_visible().unwrap_or(true) {
-                            app.exit(0);
-                        }
-                    }
+                    cli::on_quick_window_closed(&app);
                 }
             }
         })
@@ -71,6 +75,7 @@ pub fn run() {
             commands::open_path,
             commands::get_launch_payload,
             commands::get_window_label,
+            commands::quick_window_ready,
         ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application")
