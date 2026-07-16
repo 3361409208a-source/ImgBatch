@@ -1,6 +1,7 @@
 ﻿use tauri::State;
 use tauri_plugin_dialog::DialogExt;
 
+use crate::cli::LaunchPayload;
 use crate::AppState;
 
 fn path_to_string(p: tauri_plugin_dialog::FilePath) -> Option<String> {
@@ -53,6 +54,21 @@ pub fn pick_save_file(
         .set_file_name(&default_name)
         .blocking_save_file();
     Ok(path.and_then(path_to_string))
+}
+
+#[tauri::command]
+pub fn get_launch_payload(state: State<'_, AppState>) -> LaunchPayload {
+    state
+        .pending_launch
+        .lock()
+        .unwrap()
+        .clone()
+        .unwrap_or_default()
+}
+
+#[tauri::command]
+pub fn get_window_label(window: tauri::Window) -> String {
+    window.label().to_string()
 }
 
 #[tauri::command]

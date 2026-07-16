@@ -1,7 +1,7 @@
 $ErrorActionPreference = "Stop"
+$root = Split-Path -Parent $PSScriptRoot
+Set-Location $root
 .\scripts\build-sidecar.ps1
 .\scripts\build-frontend.ps1
-Push-Location src-tauri
-cargo tauri build
-Pop-Location
+npm run tauri build
 Write-Host "Installer in src-tauri/target/release/bundle/"
