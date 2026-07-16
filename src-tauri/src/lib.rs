@@ -36,6 +36,11 @@ impl Default for AppState {
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let initial = cli::parse_env_args();
+    let initial_profile = if initial.quick_action.is_some() {
+        LaunchProfile::QuickOnly
+    } else {
+        LaunchProfile::Main
+    };
 
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
@@ -44,12 +49,20 @@ pub fn run() {
             let payload = cli::parse_args_from(argv);
             if payload.quick_action.is_some() {
                 let _ = cli::queue_quick_launch(app, &payload);
-            } else {
-                let _ = cli::ensure_main_window(app);
-                cli::focus_main(app);
+                return;
             }
+            let state = app.state::<AppState>();
+            let profile = *state.launch_profile.lock().unwrap();
+            if profile == LaunchProfile::QuickOnly {
+                return;
+            }
+            let _ = cli::ensure_main_window(app);
+            cli::focus_main(app);
         }))
-        .manage(AppState::default())
+        .manage(AppState {
+            launch_profile: Mutex::new(initial_profile),
+            ..AppState::default()
+        })
         .setup(move |app| {
             let handle = app.handle().clone();
             sidecar::setup_sidecar(&handle)?;

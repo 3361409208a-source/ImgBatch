@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Play, X, FolderOpen, Trash2 } from 'lucide-react';
 import { api } from '../api/client';
 import { subscribeTask } from '../api/sse';
@@ -86,6 +86,13 @@ interface LaunchPayload {
   quickAction?: string | null;
   paths?: string[];
   out?: string | null;
+  targetFmt?: string | null;
+}
+
+function normalizeTargetFmt(fmt: string): string {
+  const t = fmt.trim().toLowerCase();
+  if (!t) return '.png';
+  return t.startsWith('.') ? t : `.${t}`;
 }
 
 function extOf(path: string): string {
@@ -296,7 +303,9 @@ export function QuickActionPage() {
   const [replace, setReplace] = useState(true);
   const [doBackup, setDoBackup] = useState(true);
   const [out, setOut] = useState('');
+  const [presetConvertFmt, setPresetConvertFmt] = useState<string | null>(null);
 
+  const autoConvertRef = useRef(false);
   const meta = ACTION_META[action] || ACTION_META.compress;
 
   const applyPayload = useCallback(async (payload: LaunchPayload) => {
@@ -304,10 +313,23 @@ export function QuickActionPage() {
     setError('');
     setDoneMsg('');
     setInspectRows([]);
+    autoConvertRef.current = false;
     const act = (payload.quickAction || 'compress').toLowerCase();
     setAction(act);
     void syncWindowChrome(act);
     if (payload.out) setOut(payload.out);
+    if (payload.targetFmt) {
+      const fmt = normalizeTargetFmt(payload.targetFmt);
+      setTargetFmt(fmt);
+      if (act === 'convert') {
+        setPresetConvertFmt(fmt);
+        autoConvertRef.current = true;
+      } else {
+        setPresetConvertFmt(null);
+      }
+    } else {
+      setPresetConvertFmt(null);
+    }
     const paths = payload.paths || [];
     if (paths.length === 0) {
       setFiles([]);
@@ -507,6 +529,13 @@ export function QuickActionPage() {
     }
   };
 
+  useEffect(() => {
+    if (!autoConvertRef.current || loading || running) return;
+    if (action !== 'convert' || !folder || inspectTargets.length === 0) return;
+    autoConvertRef.current = false;
+    void handleStart();
+  }, [loading, running, action, folder, inspectTargets.length]);
+
   const handleClose = async () => {
     try {
       const { getCurrentWindow } = await import('@tauri-apps/api/window');
@@ -612,7 +641,7 @@ export function QuickActionPage() {
               </p>
             )}
 
-            {!inspectDone && (
+            {!inspectDone && !(presetConvertFmt && action === 'convert') && (
             <div className="flex flex-col gap-2.5 rounded-md border border-border p-3 bg-[color:var(--color-muted)]/20 shrink-0">
               <div className="text-[11px] font-medium" style={{ color: meta.accent }}>
                 {meta.label}选项
@@ -783,6 +812,12 @@ export function QuickActionPage() {
             )}
 
             {error && <p className="text-xs text-red-600 whitespace-pre-wrap">{error}</p>}
+            {presetConvertFmt && action === 'convert' && !running && !doneMsg && (
+              <p className="text-xs text-[color:var(--color-muted-fg)]">
+                目标格式：<span className="font-mono font-medium text-foreground">{presetConvertFmt}</span>，正在开始转换…
+              </p>
+            )}
+
             {doneMsg && !inspectDone && <p className="text-xs" style={{ color: meta.accent }}>{doneMsg}</p>}
 
             {inspectDone && (

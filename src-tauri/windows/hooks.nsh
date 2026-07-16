@@ -2,17 +2,30 @@
 ; (SubCommands="" nested under Classes\...\shell is empty on Windows 11 modern menu.)
 ; SHCTX follows per-user / per-machine install mode.
 
-!macro ImgBatchWriteStore ACTION LABEL PLACEHOLDER
-  WriteRegStr SHCTX "Software\Microsoft\Windows\CurrentVersion\Explorer\CommandStore\shell\ImgBatch.${ACTION}" "MUIVerb" "${LABEL}"
-  WriteRegStr SHCTX "Software\Microsoft\Windows\CurrentVersion\Explorer\CommandStore\shell\ImgBatch.${ACTION}" "Icon" "$INSTDIR\imgbatch.exe,0"
-  WriteRegStr SHCTX "Software\Microsoft\Windows\CurrentVersion\Explorer\CommandStore\shell\ImgBatch.${ACTION}" "MultiSelectModel" "Document"
-  WriteRegStr SHCTX "Software\Microsoft\Windows\CurrentVersion\Explorer\CommandStore\shell\ImgBatch.${ACTION}\command" "" '"$INSTDIR\imgbatch.exe" --quick ${ACTION} ${PLACEHOLDER}'
+!macro ImgBatchWriteLeafVerb STORE_ID LABEL ACTION PLACEHOLDER
+  WriteRegStr SHCTX "Software\Microsoft\Windows\CurrentVersion\Explorer\CommandStore\shell\${STORE_ID}" "MUIVerb" "${LABEL}"
+  WriteRegStr SHCTX "Software\Microsoft\Windows\CurrentVersion\Explorer\CommandStore\shell\${STORE_ID}" "Icon" "$INSTDIR\imgbatch.exe,0"
+  WriteRegStr SHCTX "Software\Microsoft\Windows\CurrentVersion\Explorer\CommandStore\shell\${STORE_ID}" "MultiSelectModel" "Player"
+  WriteRegStr SHCTX "Software\Microsoft\Windows\CurrentVersion\Explorer\CommandStore\shell\${STORE_ID}\command" "" '"$INSTDIR\imgbatch.exe" --quick ${ACTION} "${PLACEHOLDER}"'
 !macroend
 
-!macro ImgBatchWriteParent ROOT
+!macro ImgBatchWriteConvertVerb STORE_ID LABEL FMT PLACEHOLDER
+  WriteRegStr SHCTX "Software\Microsoft\Windows\CurrentVersion\Explorer\CommandStore\shell\${STORE_ID}" "MUIVerb" "${LABEL}"
+  WriteRegStr SHCTX "Software\Microsoft\Windows\CurrentVersion\Explorer\CommandStore\shell\${STORE_ID}" "Icon" "$INSTDIR\imgbatch.exe,0"
+  WriteRegStr SHCTX "Software\Microsoft\Windows\CurrentVersion\Explorer\CommandStore\shell\${STORE_ID}" "MultiSelectModel" "Player"
+  WriteRegStr SHCTX "Software\Microsoft\Windows\CurrentVersion\Explorer\CommandStore\shell\${STORE_ID}\command" "" '"$INSTDIR\imgbatch.exe" --quick convert --format ${FMT} "${PLACEHOLDER}"'
+!macroend
+
+!macro ImgBatchWriteParent STORE_ID LABEL SUBCOMMANDS
+  WriteRegStr SHCTX "Software\Microsoft\Windows\CurrentVersion\Explorer\CommandStore\shell\${STORE_ID}" "MUIVerb" "${LABEL}"
+  WriteRegStr SHCTX "Software\Microsoft\Windows\CurrentVersion\Explorer\CommandStore\shell\${STORE_ID}" "Icon" "$INSTDIR\imgbatch.exe,0"
+  WriteRegStr SHCTX "Software\Microsoft\Windows\CurrentVersion\Explorer\CommandStore\shell\${STORE_ID}" "SubCommands" "${SUBCOMMANDS}"
+!macroend
+
+!macro ImgBatchWriteClassParent ROOT SUBCOMMANDS
   WriteRegStr SHCTX "Software\Classes\${ROOT}\shell\ImgBatch" "MUIVerb" "ImgBatch"
   WriteRegStr SHCTX "Software\Classes\${ROOT}\shell\ImgBatch" "Icon" "$INSTDIR\imgbatch.exe,0"
-  WriteRegStr SHCTX "Software\Classes\${ROOT}\shell\ImgBatch" "SubCommands" "ImgBatch.compress;ImgBatch.convert;ImgBatch.rename;ImgBatch.watermark;ImgBatch.trim;ImgBatch.normalize;ImgBatch.inspect"
+  WriteRegStr SHCTX "Software\Classes\${ROOT}\shell\ImgBatch" "SubCommands" "${SUBCOMMANDS}"
 !macroend
 
 !macro ImgBatchDeleteFlat ROOT
@@ -35,12 +48,35 @@
   DeleteRegKey SHCTX "Software\Microsoft\Windows\CurrentVersion\Explorer\CommandStore\shell\ImgBatch.trim"
   DeleteRegKey SHCTX "Software\Microsoft\Windows\CurrentVersion\Explorer\CommandStore\shell\ImgBatch.normalize"
   DeleteRegKey SHCTX "Software\Microsoft\Windows\CurrentVersion\Explorer\CommandStore\shell\ImgBatch.inspect"
-  ; legacy file/folder-specific store ids (if any)
+  DeleteRegKey SHCTX "Software\Microsoft\Windows\CurrentVersion\Explorer\CommandStore\shell\ImgBatch.convert.png"
+  DeleteRegKey SHCTX "Software\Microsoft\Windows\CurrentVersion\Explorer\CommandStore\shell\ImgBatch.convert.jpg"
+  DeleteRegKey SHCTX "Software\Microsoft\Windows\CurrentVersion\Explorer\CommandStore\shell\ImgBatch.convert.webp"
+  DeleteRegKey SHCTX "Software\Microsoft\Windows\CurrentVersion\Explorer\CommandStore\shell\ImgBatch.convert.bmp"
+  DeleteRegKey SHCTX "Software\Microsoft\Windows\CurrentVersion\Explorer\CommandStore\shell\ImgBatch.convert.tiff"
+  DeleteRegKey SHCTX "Software\Microsoft\Windows\CurrentVersion\Explorer\CommandStore\shell\ImgBatch.convert.gif"
+  DeleteRegKey SHCTX "Software\Microsoft\Windows\CurrentVersion\Explorer\CommandStore\shell\ImgBatch.convert.ico"
   DeleteRegKey SHCTX "Software\Microsoft\Windows\CurrentVersion\Explorer\CommandStore\shell\ImgBatch.f.compress"
   DeleteRegKey SHCTX "Software\Microsoft\Windows\CurrentVersion\Explorer\CommandStore\shell\ImgBatch.d.compress"
 !macroend
 
-; Stop one process: silent kill with retries, then Tauri prompt if still running.
+!macro ImgBatchDeleteDirStore
+  DeleteRegKey SHCTX "Software\Microsoft\Windows\CurrentVersion\Explorer\CommandStore\shell\ImgBatch.dir.compress"
+  DeleteRegKey SHCTX "Software\Microsoft\Windows\CurrentVersion\Explorer\CommandStore\shell\ImgBatch.dir.convert"
+  DeleteRegKey SHCTX "Software\Microsoft\Windows\CurrentVersion\Explorer\CommandStore\shell\ImgBatch.dir.rename"
+  DeleteRegKey SHCTX "Software\Microsoft\Windows\CurrentVersion\Explorer\CommandStore\shell\ImgBatch.dir.watermark"
+  DeleteRegKey SHCTX "Software\Microsoft\Windows\CurrentVersion\Explorer\CommandStore\shell\ImgBatch.dir.trim"
+  DeleteRegKey SHCTX "Software\Microsoft\Windows\CurrentVersion\Explorer\CommandStore\shell\ImgBatch.dir.normalize"
+  DeleteRegKey SHCTX "Software\Microsoft\Windows\CurrentVersion\Explorer\CommandStore\shell\ImgBatch.dir.inspect"
+  DeleteRegKey SHCTX "Software\Microsoft\Windows\CurrentVersion\Explorer\CommandStore\shell\ImgBatch.dir.convert.png"
+  DeleteRegKey SHCTX "Software\Microsoft\Windows\CurrentVersion\Explorer\CommandStore\shell\ImgBatch.dir.convert.jpg"
+  DeleteRegKey SHCTX "Software\Microsoft\Windows\CurrentVersion\Explorer\CommandStore\shell\ImgBatch.dir.convert.webp"
+  DeleteRegKey SHCTX "Software\Microsoft\Windows\CurrentVersion\Explorer\CommandStore\shell\ImgBatch.dir.convert.bmp"
+  DeleteRegKey SHCTX "Software\Microsoft\Windows\CurrentVersion\Explorer\CommandStore\shell\ImgBatch.dir.convert.tiff"
+  DeleteRegKey SHCTX "Software\Microsoft\Windows\CurrentVersion\Explorer\CommandStore\shell\ImgBatch.dir.convert.gif"
+  DeleteRegKey SHCTX "Software\Microsoft\Windows\CurrentVersion\Explorer\CommandStore\shell\ImgBatch.dir.convert.ico"
+!macroend
+
+; Stop one process: silent kill with retries, then taskkill /T fallback.
 !macro ImgBatchStopProcess executableName
   !define ImgBatchStopUid ${__LINE__}
   StrCpy $R4 0
@@ -52,7 +88,7 @@
     !endif
     Pop $R0
     ${If} $R0 <> 0
-      Goto stop_done_${ImgBatchStopUid}
+      Goto stop_taskkill_${ImgBatchStopUid}
     ${EndIf}
     !if "${INSTALLMODE}" == "currentUser"
       nsis_tauri_utils::KillProcessCurrentUser "${executableName}"
@@ -60,19 +96,26 @@
       nsis_tauri_utils::KillProcess "${executableName}"
     !endif
     Pop $R0
-    Sleep 800
+    Sleep 1000
     IntOp $R4 $R4 + 1
-    ${If} $R4 < 5
+    ${If} $R4 < 8
       Goto stop_retry_${ImgBatchStopUid}
     ${EndIf}
+  stop_taskkill_${ImgBatchStopUid}:
+    ; /T kills child processes (sidecar) — exit 128 when already gone is fine
+    ExecWait 'taskkill /F /IM "${executableName}" /T' $R0
+    Sleep 1200
   stop_done_${ImgBatchStopUid}:
   !undef ImgBatchStopUid
 !macroend
 
 !macro ImgBatchKillRunning
-  ; Sidecar is not covered by Tauri's default CheckIfAppIsRunning (main exe only).
-  !insertmacro ImgBatchStopProcess "imgbatch-api.exe"
+  ; Kill UI first so it cannot respawn imgbatch-api.exe, then kill sidecar.
   !insertmacro ImgBatchStopProcess "imgbatch.exe"
+  Sleep 1500
+  !insertmacro ImgBatchStopProcess "imgbatch-api.exe"
+  Sleep 1500
+  !insertmacro CheckIfAppIsRunning "imgbatch.exe" "${PRODUCTNAME}"
   !insertmacro CheckIfAppIsRunning "imgbatch-api.exe" "${PRODUCTNAME}"
 !macroend
 
@@ -85,7 +128,6 @@
 !macroend
 
 !macro NSIS_HOOK_POSTINSTALL
-  ; Remove flat verbs / old cascades from previous builds
   !insertmacro ImgBatchDeleteFlat "*"
   !insertmacro ImgBatchDeleteFlat "Directory"
   !insertmacro ImgBatchDeleteFlat "Directory\Background"
@@ -100,46 +142,47 @@
   !insertmacro ImgBatchDeleteFlat ".ico"
   !insertmacro ImgBatchDeleteFlat "SystemFileAssociations\image"
   !insertmacro ImgBatchDeleteStore
+  !insertmacro ImgBatchDeleteDirStore
 
-  ; CommandStore entries for files (%1) — used by * and image associations
-  !insertmacro ImgBatchWriteStore "compress" "压缩" "%*"
-  !insertmacro ImgBatchWriteStore "convert" "格式转换" "%*"
-  !insertmacro ImgBatchWriteStore "rename" "重命名" "%*"
-  !insertmacro ImgBatchWriteStore "watermark" "水印" "%*"
-  !insertmacro ImgBatchWriteStore "trim" "裁边" "%*"
-  !insertmacro ImgBatchWriteStore "normalize" "规范化" "%*"
-  !insertmacro ImgBatchWriteStore "inspect" "检查" "%*"
+  ; Leaf verbs for files (%1) and folders (%V)
+  !insertmacro ImgBatchWriteLeafVerb "ImgBatch.compress" "压缩" "compress" "%1"
+  !insertmacro ImgBatchWriteLeafVerb "ImgBatch.rename" "重命名" "rename" "%1"
+  !insertmacro ImgBatchWriteLeafVerb "ImgBatch.watermark" "水印" "watermark" "%1"
+  !insertmacro ImgBatchWriteLeafVerb "ImgBatch.trim" "裁边" "trim" "%1"
+  !insertmacro ImgBatchWriteLeafVerb "ImgBatch.normalize" "规范化" "normalize" "%1"
+  !insertmacro ImgBatchWriteLeafVerb "ImgBatch.inspect" "检查" "inspect" "%1"
 
-  ; Parent menus: one "ImgBatch" entry with submenu
-  !insertmacro ImgBatchWriteParent "*"
-  !insertmacro ImgBatchWriteParent "Directory"
-  !insertmacro ImgBatchWriteParent "Directory\Background"
+  !insertmacro ImgBatchWriteLeafVerb "ImgBatch.dir.compress" "压缩" "compress" "%V"
+  !insertmacro ImgBatchWriteLeafVerb "ImgBatch.dir.rename" "重命名" "rename" "%V"
+  !insertmacro ImgBatchWriteLeafVerb "ImgBatch.dir.watermark" "水印" "watermark" "%V"
+  !insertmacro ImgBatchWriteLeafVerb "ImgBatch.dir.trim" "裁边" "trim" "%V"
+  !insertmacro ImgBatchWriteLeafVerb "ImgBatch.dir.normalize" "规范化" "normalize" "%V"
+  !insertmacro ImgBatchWriteLeafVerb "ImgBatch.dir.inspect" "检查" "inspect" "%V"
 
-  ; Folder parents need %V — override store commands for directory use via separate store ids
-  WriteRegStr SHCTX "Software\Microsoft\Windows\CurrentVersion\Explorer\CommandStore\shell\ImgBatch.dir.compress" "MUIVerb" "压缩"
-  WriteRegStr SHCTX "Software\Microsoft\Windows\CurrentVersion\Explorer\CommandStore\shell\ImgBatch.dir.compress" "Icon" "$INSTDIR\imgbatch.exe,0"
-  WriteRegStr SHCTX "Software\Microsoft\Windows\CurrentVersion\Explorer\CommandStore\shell\ImgBatch.dir.compress\command" "" '"$INSTDIR\imgbatch.exe" --quick compress "%V"'
-  WriteRegStr SHCTX "Software\Microsoft\Windows\CurrentVersion\Explorer\CommandStore\shell\ImgBatch.dir.convert" "MUIVerb" "格式转换"
-  WriteRegStr SHCTX "Software\Microsoft\Windows\CurrentVersion\Explorer\CommandStore\shell\ImgBatch.dir.convert" "Icon" "$INSTDIR\imgbatch.exe,0"
-  WriteRegStr SHCTX "Software\Microsoft\Windows\CurrentVersion\Explorer\CommandStore\shell\ImgBatch.dir.convert\command" "" '"$INSTDIR\imgbatch.exe" --quick convert "%V"'
-  WriteRegStr SHCTX "Software\Microsoft\Windows\CurrentVersion\Explorer\CommandStore\shell\ImgBatch.dir.rename" "MUIVerb" "重命名"
-  WriteRegStr SHCTX "Software\Microsoft\Windows\CurrentVersion\Explorer\CommandStore\shell\ImgBatch.dir.rename" "Icon" "$INSTDIR\imgbatch.exe,0"
-  WriteRegStr SHCTX "Software\Microsoft\Windows\CurrentVersion\Explorer\CommandStore\shell\ImgBatch.dir.rename\command" "" '"$INSTDIR\imgbatch.exe" --quick rename "%V"'
-  WriteRegStr SHCTX "Software\Microsoft\Windows\CurrentVersion\Explorer\CommandStore\shell\ImgBatch.dir.watermark" "MUIVerb" "水印"
-  WriteRegStr SHCTX "Software\Microsoft\Windows\CurrentVersion\Explorer\CommandStore\shell\ImgBatch.dir.watermark" "Icon" "$INSTDIR\imgbatch.exe,0"
-  WriteRegStr SHCTX "Software\Microsoft\Windows\CurrentVersion\Explorer\CommandStore\shell\ImgBatch.dir.watermark\command" "" '"$INSTDIR\imgbatch.exe" --quick watermark "%V"'
-  WriteRegStr SHCTX "Software\Microsoft\Windows\CurrentVersion\Explorer\CommandStore\shell\ImgBatch.dir.trim" "MUIVerb" "裁边"
-  WriteRegStr SHCTX "Software\Microsoft\Windows\CurrentVersion\Explorer\CommandStore\shell\ImgBatch.dir.trim" "Icon" "$INSTDIR\imgbatch.exe,0"
-  WriteRegStr SHCTX "Software\Microsoft\Windows\CurrentVersion\Explorer\CommandStore\shell\ImgBatch.dir.trim\command" "" '"$INSTDIR\imgbatch.exe" --quick trim "%V"'
-  WriteRegStr SHCTX "Software\Microsoft\Windows\CurrentVersion\Explorer\CommandStore\shell\ImgBatch.dir.normalize" "MUIVerb" "规范化"
-  WriteRegStr SHCTX "Software\Microsoft\Windows\CurrentVersion\Explorer\CommandStore\shell\ImgBatch.dir.normalize" "Icon" "$INSTDIR\imgbatch.exe,0"
-  WriteRegStr SHCTX "Software\Microsoft\Windows\CurrentVersion\Explorer\CommandStore\shell\ImgBatch.dir.normalize\command" "" '"$INSTDIR\imgbatch.exe" --quick normalize "%V"'
-  WriteRegStr SHCTX "Software\Microsoft\Windows\CurrentVersion\Explorer\CommandStore\shell\ImgBatch.dir.inspect" "MUIVerb" "检查"
-  WriteRegStr SHCTX "Software\Microsoft\Windows\CurrentVersion\Explorer\CommandStore\shell\ImgBatch.dir.inspect" "Icon" "$INSTDIR\imgbatch.exe,0"
-  WriteRegStr SHCTX "Software\Microsoft\Windows\CurrentVersion\Explorer\CommandStore\shell\ImgBatch.dir.inspect\command" "" '"$INSTDIR\imgbatch.exe" --quick inspect "%V"'
+  ; Convert format submenu
+  !insertmacro ImgBatchWriteParent "ImgBatch.convert" "格式转换" "ImgBatch.convert.png;ImgBatch.convert.jpg;ImgBatch.convert.webp;ImgBatch.convert.bmp;ImgBatch.convert.tiff;ImgBatch.convert.gif;ImgBatch.convert.ico"
+  !insertmacro ImgBatchWriteParent "ImgBatch.dir.convert" "格式转换" "ImgBatch.dir.convert.png;ImgBatch.dir.convert.jpg;ImgBatch.dir.convert.webp;ImgBatch.dir.convert.bmp;ImgBatch.dir.convert.tiff;ImgBatch.dir.convert.gif;ImgBatch.dir.convert.ico"
 
-  WriteRegStr SHCTX "Software\Classes\Directory\shell\ImgBatch" "SubCommands" "ImgBatch.dir.compress;ImgBatch.dir.convert;ImgBatch.dir.rename;ImgBatch.dir.watermark;ImgBatch.dir.trim;ImgBatch.dir.normalize;ImgBatch.dir.inspect"
-  WriteRegStr SHCTX "Software\Classes\Directory\Background\shell\ImgBatch" "SubCommands" "ImgBatch.dir.compress;ImgBatch.dir.convert;ImgBatch.dir.rename;ImgBatch.dir.watermark;ImgBatch.dir.trim;ImgBatch.dir.normalize;ImgBatch.dir.inspect"
+  !insertmacro ImgBatchWriteConvertVerb "ImgBatch.convert.png" "转为 PNG" ".png" "%1"
+  !insertmacro ImgBatchWriteConvertVerb "ImgBatch.convert.jpg" "转为 JPG" ".jpg" "%1"
+  !insertmacro ImgBatchWriteConvertVerb "ImgBatch.convert.webp" "转为 WEBP" ".webp" "%1"
+  !insertmacro ImgBatchWriteConvertVerb "ImgBatch.convert.bmp" "转为 BMP" ".bmp" "%1"
+  !insertmacro ImgBatchWriteConvertVerb "ImgBatch.convert.tiff" "转为 TIFF" ".tiff" "%1"
+  !insertmacro ImgBatchWriteConvertVerb "ImgBatch.convert.gif" "转为 GIF" ".gif" "%1"
+  !insertmacro ImgBatchWriteConvertVerb "ImgBatch.convert.ico" "转为 ICO" ".ico" "%1"
+
+  !insertmacro ImgBatchWriteConvertVerb "ImgBatch.dir.convert.png" "转为 PNG" ".png" "%V"
+  !insertmacro ImgBatchWriteConvertVerb "ImgBatch.dir.convert.jpg" "转为 JPG" ".jpg" "%V"
+  !insertmacro ImgBatchWriteConvertVerb "ImgBatch.dir.convert.webp" "转为 WEBP" ".webp" "%V"
+  !insertmacro ImgBatchWriteConvertVerb "ImgBatch.dir.convert.bmp" "转为 BMP" ".bmp" "%V"
+  !insertmacro ImgBatchWriteConvertVerb "ImgBatch.dir.convert.tiff" "转为 TIFF" ".tiff" "%V"
+  !insertmacro ImgBatchWriteConvertVerb "ImgBatch.dir.convert.gif" "转为 GIF" ".gif" "%V"
+  !insertmacro ImgBatchWriteConvertVerb "ImgBatch.dir.convert.ico" "转为 ICO" ".ico" "%V"
+
+  ; Parent menus on file / folder classes
+  !insertmacro ImgBatchWriteClassParent "*" "ImgBatch.compress;ImgBatch.convert;ImgBatch.rename;ImgBatch.watermark;ImgBatch.trim;ImgBatch.normalize;ImgBatch.inspect"
+  !insertmacro ImgBatchWriteClassParent "Directory" "ImgBatch.dir.compress;ImgBatch.dir.convert;ImgBatch.dir.rename;ImgBatch.dir.watermark;ImgBatch.dir.trim;ImgBatch.dir.normalize;ImgBatch.dir.inspect"
+  !insertmacro ImgBatchWriteClassParent "Directory\Background" "ImgBatch.dir.compress;ImgBatch.dir.convert;ImgBatch.dir.rename;ImgBatch.dir.watermark;ImgBatch.dir.trim;ImgBatch.dir.normalize;ImgBatch.dir.inspect"
 !macroend
 
 !macro NSIS_HOOK_POSTUNINSTALL
@@ -157,11 +200,5 @@
   !insertmacro ImgBatchDeleteFlat ".ico"
   !insertmacro ImgBatchDeleteFlat "SystemFileAssociations\image"
   !insertmacro ImgBatchDeleteStore
-  DeleteRegKey SHCTX "Software\Microsoft\Windows\CurrentVersion\Explorer\CommandStore\shell\ImgBatch.dir.compress"
-  DeleteRegKey SHCTX "Software\Microsoft\Windows\CurrentVersion\Explorer\CommandStore\shell\ImgBatch.dir.convert"
-  DeleteRegKey SHCTX "Software\Microsoft\Windows\CurrentVersion\Explorer\CommandStore\shell\ImgBatch.dir.rename"
-  DeleteRegKey SHCTX "Software\Microsoft\Windows\CurrentVersion\Explorer\CommandStore\shell\ImgBatch.dir.watermark"
-  DeleteRegKey SHCTX "Software\Microsoft\Windows\CurrentVersion\Explorer\CommandStore\shell\ImgBatch.dir.trim"
-  DeleteRegKey SHCTX "Software\Microsoft\Windows\CurrentVersion\Explorer\CommandStore\shell\ImgBatch.dir.normalize"
-  DeleteRegKey SHCTX "Software\Microsoft\Windows\CurrentVersion\Explorer\CommandStore\shell\ImgBatch.dir.inspect"
+  !insertmacro ImgBatchDeleteDirStore
 !macroend

@@ -27,6 +27,7 @@ pub struct LaunchPayload {
     pub quick_action: Option<String>,
     pub paths: Vec<String>,
     pub out: Option<String>,
+    pub target_fmt: Option<String>,
 }
 
 pub fn parse_args_from<I, S>(args: I) -> LaunchPayload
@@ -51,9 +52,13 @@ where
             if let Some(out) = iter.next() {
                 payload.out = Some(out);
             }
+        } else if arg == "--format" {
+            if let Some(fmt) = iter.next() {
+                payload.target_fmt = Some(normalize_format(&fmt));
+            }
         } else if arg.starts_with('-') {
             // ignore unknown flags
-        } else if !arg.is_empty() {
+        } else if !arg.is_empty() && !is_shell_placeholder(&arg) {
             payload.paths.push(normalize_path(&arg));
         }
     }
@@ -67,6 +72,23 @@ pub fn parse_env_args() -> LaunchPayload {
 fn normalize_path(s: &str) -> String {
     let p = PathBuf::from(s.trim_matches('"'));
     p.to_string_lossy().into_owned()
+}
+
+fn normalize_format(s: &str) -> String {
+    let t = s.trim().trim_matches('"').to_lowercase();
+    if t.is_empty() {
+        return String::new();
+    }
+    if t.starts_with('.') {
+        t
+    } else {
+        format!(".{t}")
+    }
+}
+
+fn is_shell_placeholder(s: &str) -> bool {
+    let t = s.trim().trim_matches('"');
+    t == "%1" || t == "%*" || t == "%V" || t == "%v" || t.starts_with('%')
 }
 
 fn window_config(app: &AppHandle, label: &str) -> Option<tauri::utils::config::WindowConfig> {
@@ -137,9 +159,15 @@ fn merge_quick_buffer(app: &AppHandle, payload: &LaunchPayload) {
     let state = app.state::<crate::AppState>();
     let mut buf = state.quick_buffer.lock().unwrap();
     match buf.as_mut() {
-        Some(existing) if existing.quick_action == payload.quick_action => {
+        Some(existing)
+            if existing.quick_action == payload.quick_action
+                && existing.target_fmt == payload.target_fmt =>
+        {
             for p in &payload.paths {
                 let norm = normalize_path(p);
+                if is_shell_placeholder(&norm) {
+                    continue;
+                }
                 if !existing
                     .paths
                     .iter()
@@ -158,14 +186,34 @@ fn merge_quick_buffer(app: &AppHandle, payload: &LaunchPayload) {
                 .paths
                 .iter()
                 .map(|p| normalize_path(p))
+                .filter(|p| !is_shell_placeholder(p))
                 .collect();
             *buf = Some(merged);
         }
     }
 }
 
+fn cancel_pending_quick_flush(app: &AppHandle) {
+    let state = app.state::<crate::AppState>();
+    let mut gen = state.quick_flush_gen.lock().unwrap();
+    *gen += 1;
+    *state.quick_buffer.lock().unwrap() = None;
+}
+
+fn destroy_window_if_exists(app: &AppHandle, label: &str) {
+    if let Some(w) = app.get_webview_window(label) {
+        let _ = w.destroy();
+    }
+}
+
 fn dispatch_quick_launch(app: &AppHandle, payload: &LaunchPayload) -> Result<(), String> {
     store_pending_launch(app, payload);
+
+    let state = app.state::<crate::AppState>();
+    let profile = *state.launch_profile.lock().unwrap();
+    if profile == LaunchProfile::QuickOnly {
+        destroy_window_if_exists(app, "main");
+    }
 
     if let Some(main) = app.get_webview_window("main") {
         let was_visible = main.is_visible().unwrap_or(false);
@@ -179,8 +227,16 @@ fn dispatch_quick_launch(app: &AppHandle, payload: &LaunchPayload) -> Result<(),
     let title = payload
         .quick_action
         .as_deref()
-        .map(action_title)
-        .unwrap_or("快捷操作");
+        .map(|action| {
+            if action == "convert" {
+                if let Some(fmt) = payload.target_fmt.as_deref() {
+                    let ext = fmt.trim_start_matches('.').to_uppercase();
+                    return format!("转为 {ext}");
+                }
+            }
+            action_title(action).to_string()
+        })
+        .unwrap_or_else(|| "快捷操作".to_string());
 
     let window = build_quick_window(app)?;
     let _ = window.set_title(&format!("ImgBatch · {title}"));
@@ -240,9 +296,13 @@ pub fn focus_main(app: &AppHandle) {
 }
 
 pub fn on_quick_window_closed(app: &AppHandle) {
+    cancel_pending_quick_flush(app);
+
     let state = app.state::<crate::AppState>();
     let profile = *state.launch_profile.lock().unwrap();
     if profile == LaunchProfile::QuickOnly {
+        destroy_window_if_exists(app, "main");
+        crate::sidecar::kill_sidecar(app);
         app.exit(0);
         return;
     }
@@ -291,5 +351,26 @@ mod tests {
         ]);
         assert_eq!(p.quick_action.as_deref(), Some("compress"));
         assert_eq!(p.paths.len(), 2);
+    }
+
+    #[test]
+    fn parses_convert_with_format() {
+        let p = parse_args_from([
+            "imgbatch.exe",
+            "--quick",
+            "convert",
+            "--format",
+            ".webp",
+            r"C:\a\b.png",
+        ]);
+        assert_eq!(p.quick_action.as_deref(), Some("convert"));
+        assert_eq!(p.target_fmt.as_deref(), Some(".webp"));
+        assert_eq!(p.paths.len(), 1);
+    }
+
+    #[test]
+    fn ignores_shell_placeholders() {
+        let p = parse_args_from(["imgbatch.exe", "--quick", "compress", "%*", "%1"]);
+        assert!(p.paths.is_empty());
     }
 }
