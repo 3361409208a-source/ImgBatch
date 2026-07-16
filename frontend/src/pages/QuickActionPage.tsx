@@ -16,15 +16,71 @@ const IMAGE_EXT = new Set([
   '.ico',
 ]);
 
-const ACTION_LABELS: Record<string, string> = {
-  compress: '压缩',
-  convert: '格式转换',
-  rename: '重命名',
-  watermark: '水印',
-  trim: '裁边',
-  normalize: '规范化',
-  inspect: '检查',
+const ACTION_META: Record<
+  string,
+  { label: string; hint: string; accent: string; height: number }
+> = {
+  compress: {
+    label: '压缩',
+    hint: '调整画质与尺寸，减小文件体积',
+    accent: '#0F766E',
+    height: 640,
+  },
+  convert: {
+    label: '格式转换',
+    hint: '批量转换图片格式',
+    accent: '#0369A1',
+    height: 560,
+  },
+  rename: {
+    label: '重命名',
+    hint: '按规则批量重命名文件',
+    accent: '#7C3AED',
+    height: 600,
+  },
+  watermark: {
+    label: '水印',
+    hint: '为图片添加文字水印',
+    accent: '#C2410C',
+    height: 660,
+  },
+  trim: {
+    label: '裁边',
+    hint: '裁剪透明边缘并保留边距',
+    accent: '#B45309',
+    height: 560,
+  },
+  normalize: {
+    label: '规范化',
+    hint: '统一高度与透明裁切参数',
+    accent: '#0E7490',
+    height: 620,
+  },
+  inspect: {
+    label: '图片检查',
+    hint: '分析 PNG 画布、内容区域与四边留白',
+    accent: '#475569',
+    height: 520,
+  },
 };
+
+const POSITIONS = [
+  { v: 'top-left', t: '左上' },
+  { v: 'top-right', t: '右上' },
+  { v: 'center', t: '居中' },
+  { v: 'bottom-left', t: '左下' },
+  { v: 'bottom-right', t: '右下' },
+];
+
+interface InspectRow {
+  name: string;
+  canvas: string;
+  content: string;
+  left_pad: string;
+  right_pad: string;
+  top_pad: string;
+  bot_pad: string;
+}
 
 interface LaunchPayload {
   quickAction?: string | null;
@@ -121,6 +177,72 @@ async function resolveTargets(paths: string[]): Promise<{ folder: string; files:
   return { folder, files, skipped };
 }
 
+async function enrichFromScan(folder: string, files: FileInfo[]): Promise<FileInfo[]> {
+  if (!folder || files.length === 0) return files;
+  try {
+    const res = await api.scan(folder, false);
+    const byName = new Map(res.files.map((f) => [f.name.toLowerCase(), f]));
+    return files.map((f) => byName.get(f.name.toLowerCase()) || f);
+  } catch {
+    return files;
+  }
+}
+
+async function syncWindowChrome(action: string, resultCount = 0) {
+  const meta = ACTION_META[action] || ACTION_META.compress;
+  let h = meta.height;
+  let w = 440;
+  if (action === 'inspect' && resultCount > 0) {
+    w = 480;
+    h = resultCount === 1 ? 520 : Math.min(720, 420 + resultCount * 36);
+  }
+  try {
+    const { getCurrentWindow } = await import('@tauri-apps/api/window');
+    const { LogicalSize } = await import('@tauri-apps/api/dpi');
+    const win = getCurrentWindow();
+    await win.setTitle(`ImgBatch · ${meta.label}`);
+    await win.setSize(new LogicalSize(w, h));
+  } catch {
+    /* browser / non-tauri */
+  }
+}
+
+function InspectResultCard({ row }: { row: InspectRow }) {
+  return (
+    <div className="rounded-md border border-border bg-white/70 p-3 space-y-2 text-xs">
+      <div className="font-mono font-medium truncate" title={row.name}>
+        {row.name}
+      </div>
+      <div className="grid grid-cols-2 gap-2">
+        <div className="rounded border border-border/70 px-2 py-1.5 bg-[color:var(--color-muted)]/20">
+          <div className="text-[10px] text-[color:var(--color-muted-fg)]">画布 Canvas</div>
+          <div className="font-mono text-sm mt-0.5">{row.canvas}</div>
+        </div>
+        <div className="rounded border border-border/70 px-2 py-1.5 bg-[color:var(--color-muted)]/20">
+          <div className="text-[10px] text-[color:var(--color-muted-fg)]">内容 Content</div>
+          <div className="font-mono text-sm mt-0.5">{row.content}</div>
+        </div>
+        <div className="rounded border border-border/70 px-2 py-1.5 bg-[color:var(--color-muted)]/20">
+          <div className="text-[10px] text-[color:var(--color-muted-fg)]">左留白 L</div>
+          <div className="font-mono text-sm mt-0.5">{row.left_pad}</div>
+        </div>
+        <div className="rounded border border-border/70 px-2 py-1.5 bg-[color:var(--color-muted)]/20">
+          <div className="text-[10px] text-[color:var(--color-muted-fg)]">右留白 R</div>
+          <div className="font-mono text-sm mt-0.5">{row.right_pad}</div>
+        </div>
+        <div className="rounded border border-border/70 px-2 py-1.5 bg-[color:var(--color-muted)]/20">
+          <div className="text-[10px] text-[color:var(--color-muted-fg)]">上留白 T</div>
+          <div className="font-mono text-sm mt-0.5">{row.top_pad}</div>
+        </div>
+        <div className="rounded border border-border/70 px-2 py-1.5 bg-[color:var(--color-muted)]/20">
+          <div className="text-[10px] text-[color:var(--color-muted-fg)]">下留白 B</div>
+          <div className="font-mono text-sm mt-0.5">{row.bot_pad}</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function QuickActionPage() {
   const [action, setAction] = useState('compress');
   const [folder, setFolder] = useState('');
@@ -132,23 +254,39 @@ export function QuickActionPage() {
   const [progress, setProgress] = useState(0);
   const [message, setMessage] = useState('');
   const [doneMsg, setDoneMsg] = useState('');
+  const [inspectRows, setInspectRows] = useState<InspectRow[]>([]);
 
-  // Options
   const [quality, setQuality] = useState(75);
+  const [resizePct, setResizePct] = useState(100);
+  const [exifMode, setExifMode] = useState('keep');
   const [targetFmt, setTargetFmt] = useState('.png');
+  const [renameMode, setRenameMode] = useState('prefix');
   const [renamePrefix, setRenamePrefix] = useState('img_');
+  const [renameSuffix, setRenameSuffix] = useState('');
+  const [renameFind, setRenameFind] = useState('');
+  const [renameReplace, setRenameReplace] = useState('');
   const [wmText, setWmText] = useState('水印');
+  const [wmOpacity, setWmOpacity] = useState(50);
+  const [wmPosition, setWmPosition] = useState('bottom-right');
+  const [wmSize, setWmSize] = useState(36);
   const [padding, setPadding] = useState(4);
+  const [alphaThreshold, setAlphaThreshold] = useState(28);
+  const [targetHeight, setTargetHeight] = useState(280);
+  const [normPadding, setNormPadding] = useState(6);
   const [replace, setReplace] = useState(true);
   const [doBackup, setDoBackup] = useState(true);
   const [out, setOut] = useState('');
+
+  const meta = ACTION_META[action] || ACTION_META.compress;
 
   const applyPayload = useCallback(async (payload: LaunchPayload) => {
     setLoading(true);
     setError('');
     setDoneMsg('');
+    setInspectRows([]);
     const act = (payload.quickAction || 'compress').toLowerCase();
     setAction(act);
+    void syncWindowChrome(act);
     if (payload.out) setOut(payload.out);
     const paths = payload.paths || [];
     if (paths.length === 0) {
@@ -160,10 +298,11 @@ export function QuickActionPage() {
     }
     try {
       const resolved = await resolveTargets(paths);
+      const enriched = await enrichFromScan(resolved.folder, resolved.files);
       setFolder(resolved.folder);
-      setFiles(resolved.files);
+      setFiles(enriched);
       setSkipped(resolved.skipped);
-      if (resolved.files.length === 0) {
+      if (enriched.length === 0) {
         setError('没有可处理的图片文件');
       }
     } catch (e) {
@@ -199,6 +338,13 @@ export function QuickActionPage() {
     [files],
   );
 
+  const pngFiles = useMemo(
+    () => imageFiles.filter((f) => extOf(f.name) === '.png' || extOf(f.path) === '.png'),
+    [imageFiles],
+  );
+
+  const inspectTargets = action === 'inspect' ? pngFiles : imageFiles;
+
   const removeFile = (path: string) => {
     setFiles((prev) => prev.filter((f) => f.path !== path && f.name !== path));
   };
@@ -213,27 +359,29 @@ export function QuickActionPage() {
     }
   };
 
+  const needsOutputOpts = action !== 'inspect' && action !== 'rename';
+
   const buildParams = (): Record<string, unknown> => {
     const outVal = replace ? null : out || null;
     switch (action) {
       case 'compress':
         return {
           quality,
-          resize_pct: 100,
+          resize_pct: resizePct,
           do_backup: doBackup,
           replace,
           out: outVal,
-          exif_mode: 'keep',
+          exif_mode: exifMode,
         };
       case 'convert':
         return { target_fmt: targetFmt, do_backup: doBackup, replace, out: outVal };
       case 'rename':
         return {
-          mode: 'prefix',
+          mode: renameMode,
           prefix: renamePrefix,
-          suffix: '',
-          find: '',
-          replace: '',
+          suffix: renameSuffix,
+          find: renameFind,
+          replace: renameReplace,
           seq_template: 'photo_{num}',
           seq_start: 1,
           seq_digits: 3,
@@ -245,9 +393,9 @@ export function QuickActionPage() {
           params: {
             type: 'text',
             text: wmText,
-            fontsize: 36,
-            opacity: 0.5,
-            position: 'bottom-right',
+            fontsize: wmSize,
+            opacity: wmOpacity / 100,
+            position: wmPosition,
             color: '#ffffff',
             image_path: '',
             img_scale: 0.2,
@@ -260,9 +408,9 @@ export function QuickActionPage() {
         return { padding, do_backup: doBackup, replace, out: outVal };
       case 'normalize':
         return {
-          alpha_threshold: 28,
-          target_height: 280,
-          padding: 6,
+          alpha_threshold: alphaThreshold,
+          target_height: targetHeight,
+          padding: normPadding,
           do_backup: doBackup,
           replace,
           out: outVal,
@@ -277,16 +425,16 @@ export function QuickActionPage() {
   const handleStart = async () => {
     setError('');
     setDoneMsg('');
+    setInspectRows([]);
     if (!folder) {
       setError('缺少工作目录');
       return;
     }
-    const list = action === 'inspect' || action === 'rename' ? imageFiles : imageFiles;
-    if (list.length === 0) {
-      setError('没有可处理的图片');
+    if (inspectTargets.length === 0) {
+      setError(action === 'inspect' ? '没有可检查的 PNG 文件（检查仅支持 .png）' : '没有可处理的图片');
       return;
     }
-    if (!replace && action !== 'inspect' && action !== 'rename' && !out.trim()) {
+    if (needsOutputOpts && !replace && !out.trim()) {
       setError('未勾选覆盖原图时，请设置输出目录');
       return;
     }
@@ -298,7 +446,7 @@ export function QuickActionPage() {
       const res = await api.createTask({
         type: action,
         folder,
-        file_list: list.map((f) => f.name),
+        file_list: inspectTargets.map((f) => f.name),
         params: buildParams(),
       });
       subscribeTask(
@@ -316,8 +464,15 @@ export function QuickActionPage() {
             setMessage('已取消');
           } else {
             setProgress(100);
-            setDoneMsg(`完成：${list.length} 个文件`);
+            setDoneMsg(`完成：${inspectTargets.length} 个文件`);
             setMessage('');
+            if (action === 'inspect' && result && typeof result === 'object') {
+              const payload = result as { results?: InspectRow[] };
+              if (Array.isArray(payload.results)) {
+                setInspectRows(payload.results);
+                void syncWindowChrome(action, payload.results.length);
+              }
+            }
           }
         },
       );
@@ -337,7 +492,7 @@ export function QuickActionPage() {
   };
 
   const openOut = async () => {
-    const target = !replace && out ? out : folder;
+    const target = needsOutputOpts && !replace && out ? out : folder;
     if (!target) return;
     try {
       const { invoke } = await import('@tauri-apps/api/core');
@@ -347,14 +502,29 @@ export function QuickActionPage() {
     }
   };
 
-  const title = ACTION_LABELS[action] || action;
+  const startLabel =
+    action === 'inspect' ? '开始检查' : action === 'rename' ? '开始重命名' : `开始${meta.label.replace(/^图片/, '')}`;
+
+  const canStart = !running && !loading && inspectTargets.length > 0;
+  const inspectDone = action === 'inspect' && inspectRows.length > 0;
 
   return (
     <div className="flex flex-col h-screen bg-surface text-foreground">
-      <header className="px-4 py-3 border-b border-border flex items-center justify-between shrink-0">
-        <div>
-          <div className="text-sm font-semibold tracking-tight">ImgBatch 快捷操作</div>
-          <div className="text-xs text-[color:var(--color-muted-fg)] mt-0.5">{title}</div>
+      <header
+        className="px-4 py-3 border-b border-border flex items-center justify-between shrink-0"
+        style={{ borderTop: `3px solid ${meta.accent}` }}
+      >
+        <div className="min-w-0">
+          <div className="flex items-center gap-2">
+            <span
+              className="text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded text-white shrink-0"
+              style={{ background: meta.accent }}
+            >
+              {meta.label}
+            </span>
+            <div className="text-sm font-semibold tracking-tight truncate">ImgBatch 快捷操作</div>
+          </div>
+          <div className="text-[11px] text-[color:var(--color-muted-fg)] mt-1 truncate">{meta.hint}</div>
         </div>
         <button type="button" className="btn-ghost h-8 w-8 p-0 justify-center" onClick={() => void handleClose()} title="关闭">
           <X size={16} />
@@ -373,19 +543,26 @@ export function QuickActionPage() {
               <p className="text-xs text-amber-700">另有 {skipped} 个文件不在同一目录，已忽略</p>
             )}
 
-            <div className="border border-border rounded-md overflow-hidden flex-1 min-h-[120px] max-h-[180px] flex flex-col">
-              <div className="px-2 py-1.5 text-[11px] bg-[color:var(--color-muted)]/40 border-b border-border">
-                文件 ({imageFiles.length})
+            <div className="border border-border rounded-md overflow-hidden shrink-0 max-h-[120px] flex flex-col">
+              <div className="px-2 py-1.5 text-[11px] border-b border-border" style={{ background: `${meta.accent}14` }}>
+                {action === 'inspect' ? `待检查 PNG (${pngFiles.length})` : `文件 (${imageFiles.length})`}
               </div>
               <ul className="overflow-auto text-xs flex-1">
-                {imageFiles.map((f) => (
+                {(action === 'inspect' ? pngFiles : imageFiles).map((f) => (
                   <li
                     key={f.path || f.name}
-                    className="flex items-center gap-1 px-2 py-1 border-b border-border/60 last:border-0"
+                    className="flex items-center gap-2 px-2 py-1.5 border-b border-border/60 last:border-0"
                   >
-                    <span className="truncate flex-1 font-mono" title={f.path}>
-                      {f.name}
-                    </span>
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate font-mono" title={f.path}>
+                        {f.name}
+                      </div>
+                      {(f.dimensions || f.size_str || f.format) && (
+                        <div className="text-[10px] text-[color:var(--color-muted-fg)] truncate">
+                          {[f.format, f.dimensions, f.size_str].filter(Boolean).join(' · ')}
+                        </div>
+                      )}
+                    </div>
                     <button
                       type="button"
                       className="btn-ghost h-6 w-6 p-0 justify-center shrink-0"
@@ -396,88 +573,160 @@ export function QuickActionPage() {
                     </button>
                   </li>
                 ))}
-                {imageFiles.length === 0 && (
-                  <li className="px-2 py-3 text-[color:var(--color-muted-fg)]">无图片文件</li>
+                {(action === 'inspect' ? pngFiles : imageFiles).length === 0 && (
+                  <li className="px-2 py-3 text-[color:var(--color-muted-fg)]">
+                    {action === 'inspect' ? '无 PNG 文件' : '无图片文件'}
+                  </li>
                 )}
               </ul>
             </div>
 
-            {/* Minimal options */}
-            <div className="flex flex-col gap-2.5">
+            {action === 'inspect' && imageFiles.length > pngFiles.length && (
+              <p className="text-xs text-amber-700">
+                已忽略 {imageFiles.length - pngFiles.length} 个非 PNG 文件（检查仅支持 PNG）
+              </p>
+            )}
+
+            {!inspectDone && (
+            <div className="flex flex-col gap-2.5 rounded-md border border-border p-3 bg-[color:var(--color-muted)]/20 shrink-0">
+              <div className="text-[11px] font-medium" style={{ color: meta.accent }}>
+                {meta.label}选项
+              </div>
+
+              {action === 'inspect' ? (
+                <p className="text-xs text-[color:var(--color-muted-fg)] leading-relaxed">
+                  将分析每张 PNG 的透明区域与内容边界，输出画布、内容区域与四边留白。
+                </p>
+              ) : (
+              <>
               {action === 'compress' && (
-                <label className="flex flex-col gap-1">
-                  <span className="label-muted">质量 {quality}</span>
-                  <input
-                    type="range"
-                    min={1}
-                    max={100}
-                    value={quality}
-                    onChange={(e) => setQuality(Number(e.target.value))}
-                  />
-                </label>
+                <>
+                  <label className="flex flex-col gap-1">
+                    <span className="label-muted">质量 {quality}</span>
+                    <input type="range" min={1} max={100} value={quality} onChange={(e) => setQuality(Number(e.target.value))} />
+                  </label>
+                  <label className="flex flex-col gap-1">
+                    <span className="label-muted">缩放 {resizePct}%</span>
+                    <input type="range" min={10} max={100} value={resizePct} onChange={(e) => setResizePct(Number(e.target.value))} />
+                  </label>
+                  <label className="flex flex-col gap-1">
+                    <span className="label-muted">EXIF</span>
+                    <select className="field" value={exifMode} onChange={(e) => setExifMode(e.target.value)}>
+                      <option value="keep">保留</option>
+                      <option value="strip">清除</option>
+                      <option value="orientation">仅方向</option>
+                    </select>
+                  </label>
+                </>
               )}
+
               {action === 'convert' && (
                 <label className="flex flex-col gap-1">
                   <span className="label-muted">目标格式</span>
-                  <select
-                    className="field"
-                    value={targetFmt}
-                    onChange={(e) => setTargetFmt(e.target.value)}
-                  >
-                    {['.png', '.jpg', '.webp', '.bmp', '.gif'].map((f) => (
-                      <option key={f} value={f}>
-                        {f}
-                      </option>
+                  <select className="field" value={targetFmt} onChange={(e) => setTargetFmt(e.target.value)}>
+                    {['.png', '.jpg', '.jpeg', '.webp', '.bmp', '.gif', '.tiff'].map((f) => (
+                      <option key={f} value={f}>{f}</option>
                     ))}
                   </select>
                 </label>
               )}
+
               {action === 'rename' && (
-                <label className="flex flex-col gap-1">
-                  <span className="label-muted">前缀</span>
-                  <input
-                    className="field"
-                    value={renamePrefix}
-                    onChange={(e) => setRenamePrefix(e.target.value)}
-                  />
-                </label>
+                <>
+                  <label className="flex flex-col gap-1">
+                    <span className="label-muted">模式</span>
+                    <select className="field" value={renameMode} onChange={(e) => setRenameMode(e.target.value)}>
+                      <option value="prefix">添加前缀</option>
+                      <option value="suffix">添加后缀</option>
+                      <option value="replace">查找替换</option>
+                      <option value="seq">序号</option>
+                    </select>
+                  </label>
+                  {(renameMode === 'prefix' || renameMode === 'seq') && (
+                    <label className="flex flex-col gap-1">
+                      <span className="label-muted">前缀</span>
+                      <input className="field" value={renamePrefix} onChange={(e) => setRenamePrefix(e.target.value)} />
+                    </label>
+                  )}
+                  {renameMode === 'suffix' && (
+                    <label className="flex flex-col gap-1">
+                      <span className="label-muted">后缀</span>
+                      <input className="field" value={renameSuffix} onChange={(e) => setRenameSuffix(e.target.value)} />
+                    </label>
+                  )}
+                  {renameMode === 'replace' && (
+                    <>
+                      <label className="flex flex-col gap-1">
+                        <span className="label-muted">查找</span>
+                        <input className="field" value={renameFind} onChange={(e) => setRenameFind(e.target.value)} />
+                      </label>
+                      <label className="flex flex-col gap-1">
+                        <span className="label-muted">替换为</span>
+                        <input className="field" value={renameReplace} onChange={(e) => setRenameReplace(e.target.value)} />
+                      </label>
+                    </>
+                  )}
+                </>
               )}
+
               {action === 'watermark' && (
-                <label className="flex flex-col gap-1">
-                  <span className="label-muted">水印文字</span>
-                  <input className="field" value={wmText} onChange={(e) => setWmText(e.target.value)} />
-                </label>
+                <>
+                  <label className="flex flex-col gap-1">
+                    <span className="label-muted">水印文字</span>
+                    <input className="field" value={wmText} onChange={(e) => setWmText(e.target.value)} />
+                  </label>
+                  <label className="flex flex-col gap-1">
+                    <span className="label-muted">字号 {wmSize}</span>
+                    <input type="range" min={12} max={96} value={wmSize} onChange={(e) => setWmSize(Number(e.target.value))} />
+                  </label>
+                  <label className="flex flex-col gap-1">
+                    <span className="label-muted">透明度 {wmOpacity}%</span>
+                    <input type="range" min={5} max={100} value={wmOpacity} onChange={(e) => setWmOpacity(Number(e.target.value))} />
+                  </label>
+                  <label className="flex flex-col gap-1">
+                    <span className="label-muted">位置</span>
+                    <select className="field" value={wmPosition} onChange={(e) => setWmPosition(e.target.value)}>
+                      {POSITIONS.map((p) => (
+                        <option key={p.v} value={p.v}>{p.t}</option>
+                      ))}
+                    </select>
+                  </label>
+                </>
               )}
+
               {action === 'trim' && (
                 <label className="flex flex-col gap-1">
-                  <span className="label-muted">边距</span>
-                  <input
-                    className="field"
-                    type="number"
-                    min={0}
-                    value={padding}
-                    onChange={(e) => setPadding(Number(e.target.value))}
-                  />
+                  <span className="label-muted">保留边距 (px)</span>
+                  <input className="field" type="number" min={0} value={padding} onChange={(e) => setPadding(Number(e.target.value))} />
                 </label>
               )}
 
-              {action !== 'inspect' && action !== 'rename' && (
+              {action === 'normalize' && (
                 <>
+                  <label className="flex flex-col gap-1">
+                    <span className="label-muted">透明阈值</span>
+                    <input className="field" type="number" min={0} max={255} value={alphaThreshold} onChange={(e) => setAlphaThreshold(Number(e.target.value))} />
+                  </label>
+                  <label className="flex flex-col gap-1">
+                    <span className="label-muted">目标高度</span>
+                    <input className="field" type="number" min={1} value={targetHeight} onChange={(e) => setTargetHeight(Number(e.target.value))} />
+                  </label>
+                  <label className="flex flex-col gap-1">
+                    <span className="label-muted">边距</span>
+                    <input className="field" type="number" min={0} value={normPadding} onChange={(e) => setNormPadding(Number(e.target.value))} />
+                  </label>
+                </>
+              )}
+
+              {needsOutputOpts && (
+                <div className="flex flex-col gap-2 pt-1 border-t border-border/70">
                   <label className="flex items-center gap-2 text-xs">
-                    <input
-                      type="checkbox"
-                      checked={replace}
-                      onChange={(e) => setReplace(e.target.checked)}
-                    />
+                    <input type="checkbox" checked={replace} onChange={(e) => setReplace(e.target.checked)} />
                     覆盖原图
                   </label>
                   <label className="flex items-center gap-2 text-xs">
-                    <input
-                      type="checkbox"
-                      checked={doBackup}
-                      onChange={(e) => setDoBackup(e.target.checked)}
-                    />
-                    备份
+                    <input type="checkbox" checked={doBackup} onChange={(e) => setDoBackup(e.target.checked)} />
+                    操作前备份
                   </label>
                   {!replace && (
                     <div className="flex gap-1.5 items-center">
@@ -492,24 +741,64 @@ export function QuickActionPage() {
                       </button>
                     </div>
                   )}
-                </>
+                </div>
+              )}
+              </>
               )}
             </div>
+            )}
 
             {running && (
               <div className="flex flex-col gap-1">
                 <div className="h-1.5 rounded bg-[color:var(--color-muted)] overflow-hidden">
-                  <div
-                    className="h-full bg-[color:var(--color-primary)] transition-all"
-                    style={{ width: `${Math.min(100, progress)}%` }}
-                  />
+                  <div className="h-full transition-all" style={{ width: `${Math.min(100, progress)}%`, background: meta.accent }} />
                 </div>
                 <p className="text-[11px] text-[color:var(--color-muted-fg)] truncate">{message}</p>
               </div>
             )}
 
             {error && <p className="text-xs text-red-600 whitespace-pre-wrap">{error}</p>}
-            {doneMsg && <p className="text-xs text-teal-800">{doneMsg}</p>}
+            {doneMsg && !inspectDone && <p className="text-xs" style={{ color: meta.accent }}>{doneMsg}</p>}
+
+            {inspectDone && (
+              <div className="flex flex-col gap-2 shrink-0">
+                <div className="text-xs font-medium" style={{ color: meta.accent }}>
+                  检查结果（{inspectRows.length}）
+                </div>
+                {inspectRows.length === 1 ? (
+                  <InspectResultCard row={inspectRows[0]} />
+                ) : (
+                  <div className="overflow-auto border border-border rounded-md max-h-64">
+                    <table className="w-full text-xs font-mono border-collapse">
+                      <thead className="sticky top-0 bg-[color:var(--color-muted)]/80">
+                        <tr className="text-[color:var(--color-muted-fg)]">
+                          <th className="px-2 py-2 text-left">文件名</th>
+                          <th className="px-2 py-2">画布</th>
+                          <th className="px-2 py-2">内容</th>
+                          <th className="px-2 py-2">L</th>
+                          <th className="px-2 py-2">R</th>
+                          <th className="px-2 py-2">T</th>
+                          <th className="px-2 py-2">B</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {inspectRows.map((r, i) => (
+                          <tr key={`${r.name}-${i}`} className="border-t border-border/70">
+                            <td className="px-2 py-2 align-middle max-w-[100px] truncate" title={r.name}>{r.name}</td>
+                            <td className="px-2 py-2 align-middle text-center whitespace-nowrap">{r.canvas}</td>
+                            <td className="px-2 py-2 align-middle text-center whitespace-nowrap">{r.content}</td>
+                            <td className="px-2 py-2 align-middle text-center">{r.left_pad}</td>
+                            <td className="px-2 py-2 align-middle text-center">{r.right_pad}</td>
+                            <td className="px-2 py-2 align-middle text-center">{r.top_pad}</td>
+                            <td className="px-2 py-2 align-middle text-center">{r.bot_pad}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            )}
           </>
         )}
       </div>
@@ -517,9 +806,11 @@ export function QuickActionPage() {
       <footer className="px-4 py-3 border-t border-border flex gap-2 shrink-0">
         {doneMsg ? (
           <>
-            <button type="button" className="btn-secondary flex-1" onClick={() => void openOut()}>
-              打开目录
-            </button>
+            {action !== 'inspect' && (
+              <button type="button" className="btn-secondary flex-1" onClick={() => void openOut()}>
+                打开目录
+              </button>
+            )}
             <button type="button" className="btn-primary flex-1" onClick={() => void handleClose()}>
               关闭
             </button>
@@ -532,11 +823,12 @@ export function QuickActionPage() {
             <button
               type="button"
               className="btn-primary flex-1"
-              disabled={running || loading || imageFiles.length === 0}
+              style={{ background: meta.accent }}
+              disabled={!canStart}
               onClick={() => void handleStart()}
             >
               <Play size={14} />
-              开始
+              {startLabel}
             </button>
           </>
         )}

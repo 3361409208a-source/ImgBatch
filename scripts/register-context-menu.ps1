@@ -1,4 +1,4 @@
-# Register ImgBatch cascading quick-action context menus for the current user (HKCU).
+# Register one parent "ImgBatch" menu + submenu via Explorer CommandStore (HKCU).
 # Usage:
 #   .\scripts\register-context-menu.ps1
 #   .\scripts\register-context-menu.ps1 -ExePath "C:\path\to\imgbatch.exe"
@@ -36,45 +36,65 @@ $actions = @(
     @{ Id = "inspect"; Label = [string]([char]0x68C0) + [char]0x67E5 }
 )
 
-function Set-ShellCascade([string]$ClassRoot, [string]$ArgToken) {
-    # Use .NET so "*" is not treated as a PowerShell wildcard.
-    $base = [Microsoft.Win32.Registry]::CurrentUser.CreateSubKey("Software\Classes\$ClassRoot\shell\ImgBatch")
-    $base.SetValue("", "ImgBatch")
-    $base.SetValue("MUIVerb", "ImgBatch")
-    $base.SetValue("Icon", "$ExePath,0")
-    $base.SetValue("SubCommands", "")
+$fileSub = ($actions | ForEach-Object { "ImgBatch.$($_.Id)" }) -join ";"
+$dirSub = ($actions | ForEach-Object { "ImgBatch.dir.$($_.Id)" }) -join ";"
 
-    foreach ($a in $actions) {
-        $verb = $base.CreateSubKey("shell\$($a.Id)")
-        $verb.SetValue("MUIVerb", $a.Label)
-        $verb.SetValue("Icon", "$ExePath,0")
-        $verb.SetValue("MultiSelectModel", "Player")
-        $cmd = $verb.CreateSubKey("command")
-        $cmd.SetValue("", "`"$ExePath`" --quick $($a.Id) $ArgToken")
-        $cmd.Close()
-        $verb.Close()
+function Remove-Key([Microsoft.Win32.RegistryKey]$Hive, [string]$Rel) {
+    try { $Hive.DeleteSubKeyTree($Rel, $false) } catch {}
+}
+
+function Clear-Old([Microsoft.Win32.RegistryKey]$Hive) {
+    $flat = @(
+        "ImgBatch", "ImgBatchSep",
+        "ImgBatchCompress", "ImgBatchConvert", "ImgBatchRename",
+        "ImgBatchWatermark", "ImgBatchTrim", "ImgBatchNormalize", "ImgBatchInspect"
+    )
+    $classRoots = @(
+        "*", "Directory", "Directory\Background",
+        ".png", ".jpg", ".jpeg", ".webp", ".gif", ".bmp", ".tif", ".tiff", ".ico",
+        "SystemFileAssociations\image"
+    )
+    foreach ($cr in $classRoots) {
+        foreach ($name in $flat) {
+            Remove-Key $Hive "Software\Classes\$cr\shell\$name"
+        }
     }
-    $base.Close()
+    foreach ($a in $actions) {
+        Remove-Key $Hive "Software\Microsoft\Windows\CurrentVersion\Explorer\CommandStore\shell\ImgBatch.$($a.Id)"
+        Remove-Key $Hive "Software\Microsoft\Windows\CurrentVersion\Explorer\CommandStore\shell\ImgBatch.dir.$($a.Id)"
+    }
 }
 
-$targets = @(
-    @{ Root = "*"; Arg = '"%1"' },
-    @{ Root = "Directory"; Arg = '"%V"' },
-    @{ Root = "Directory\Background"; Arg = '"%V"' },
-    @{ Root = ".png"; Arg = '"%1"' },
-    @{ Root = ".jpg"; Arg = '"%1"' },
-    @{ Root = ".jpeg"; Arg = '"%1"' },
-    @{ Root = ".webp"; Arg = '"%1"' },
-    @{ Root = ".gif"; Arg = '"%1"' },
-    @{ Root = ".bmp"; Arg = '"%1"' },
-    @{ Root = ".tif"; Arg = '"%1"' },
-    @{ Root = ".tiff"; Arg = '"%1"' },
-    @{ Root = ".ico"; Arg = '"%1"' },
-    @{ Root = "SystemFileAssociations\image"; Arg = '"%1"' }
-)
-
-foreach ($t in $targets) {
-    Set-ShellCascade -ClassRoot $t.Root -ArgToken $t.Arg
+function Write-Store([Microsoft.Win32.RegistryKey]$Hive, [string]$StoreId, [string]$Label, [string]$Action, [string]$ArgToken) {
+    $key = $Hive.CreateSubKey("Software\Microsoft\Windows\CurrentVersion\Explorer\CommandStore\shell\$StoreId")
+    $key.SetValue("MUIVerb", $Label)
+    $key.SetValue("Icon", "$ExePath,0")
+    $key.SetValue("MultiSelectModel", "Player")
+    $cmd = $key.CreateSubKey("command")
+    $cmd.SetValue("", "`"$ExePath`" --quick $Action $ArgToken")
+    $cmd.Close()
+    $key.Close()
 }
 
-Write-Host "Registered ImgBatch context menus -> $ExePath"
+function Write-Parent([Microsoft.Win32.RegistryKey]$Hive, [string]$ClassRoot, [string]$SubCommands) {
+    $key = $Hive.CreateSubKey("Software\Classes\$ClassRoot\shell\ImgBatch")
+    $key.SetValue("MUIVerb", "ImgBatch")
+    $key.SetValue("Icon", "$ExePath,0")
+    $key.SetValue("SubCommands", $SubCommands)
+    $key.Close()
+}
+
+$hkcu = [Microsoft.Win32.Registry]::CurrentUser
+Clear-Old $hkcu
+
+foreach ($a in $actions) {
+    Write-Store $hkcu "ImgBatch.$($a.Id)" $a.Label $a.Id '"%1"'
+    Write-Store $hkcu "ImgBatch.dir.$($a.Id)" $a.Label $a.Id '"%V"'
+}
+
+Write-Parent $hkcu "*" $fileSub
+Write-Parent $hkcu "Directory" $dirSub
+Write-Parent $hkcu "Directory\Background" $dirSub
+
+Write-Host "Registered ImgBatch parent menu + submenu -> $ExePath"
+Write-Host "SubCommands (files): $fileSub"

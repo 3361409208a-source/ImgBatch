@@ -60,27 +60,70 @@ fn normalize_path(s: &str) -> String {
     p.to_string_lossy().into_owned()
 }
 
+fn build_quick_window(app: &AppHandle) -> Result<tauri::WebviewWindow, String> {
+    // Prefer tauri.conf.json "quick" entry so size/title stay consistent.
+    if let Some(cfg) = app
+        .config()
+        .app
+        .windows
+        .iter()
+        .find(|w| w.label == "quick")
+        .cloned()
+    {
+        return WebviewWindowBuilder::from_config(app, &cfg)
+            .map_err(|e| format!("quick window config: {e}"))?
+            .build()
+            .map_err(|e| format!("Failed to create quick window: {e}"));
+    }
+
+    WebviewWindowBuilder::new(app, "quick", WebviewUrl::App("index.html".into()))
+        .title("ImgBatch 快捷操作")
+        .inner_size(420.0, 580.0)
+        .min_inner_size(360.0, 420.0)
+        .center()
+        .visible(true)
+        .focused(true)
+        .build()
+        .map_err(|e| format!("Failed to create quick window: {e}"))
+}
+
+fn action_title(action: &str) -> &'static str {
+    match action {
+        "compress" => "图片压缩",
+        "convert" => "格式转换",
+        "rename" => "批量重命名",
+        "watermark" => "添加水印",
+        "trim" => "裁边",
+        "normalize" => "规范化",
+        "inspect" => "图片检查",
+        _ => "快捷操作",
+    }
+}
+
 pub fn open_or_focus_quick(app: &AppHandle, payload: &LaunchPayload) -> Result<(), String> {
     {
         let state = app.state::<crate::AppState>();
         *state.pending_launch.lock().unwrap() = Some(payload.clone());
     }
 
+    // Keep main hidden — never show it during quick-action flow (prevents flash).
     if let Some(main) = app.get_webview_window("main") {
-        // Keep main alive for single-instance / full UI, but prefer quick popup.
-        let _ = main;
+        let _ = main.hide();
     }
 
+    let title = payload
+        .quick_action
+        .as_deref()
+        .map(action_title)
+        .unwrap_or("快捷操作");
+
     let window = if let Some(w) = app.get_webview_window("quick") {
+        let _ = w.set_title(&format!("ImgBatch · {title}"));
         w
     } else {
-        WebviewWindowBuilder::new(app, "quick", WebviewUrl::App("index.html".into()))
-            .title("ImgBatch 快捷操作")
-            .inner_size(420.0, 560.0)
-            .min_inner_size(360.0, 420.0)
-            .center()
-            .build()
-            .map_err(|e| format!("Failed to create quick window: {e}"))?
+        let w = build_quick_window(app)?;
+        let _ = w.set_title(&format!("ImgBatch · {title}"));
+        w
     };
 
     let _ = window.show();
@@ -99,7 +142,7 @@ pub fn focus_main(app: &AppHandle) {
     }
 }
 
-/// Hide main window when starting directly in quick mode.
+/// Main starts invisible; show it only for normal launches.
 pub fn apply_initial_launch(app: &AppHandle, payload: &LaunchPayload) -> Result<(), String> {
     {
         let state = app.state::<crate::AppState>();
@@ -107,10 +150,9 @@ pub fn apply_initial_launch(app: &AppHandle, payload: &LaunchPayload) -> Result<
     }
 
     if payload.quick_action.is_some() {
-        if let Some(main) = app.get_webview_window("main") {
-            let _ = main.hide();
-        }
         open_or_focus_quick(app, payload)?;
+    } else {
+        focus_main(app);
     }
     Ok(())
 }

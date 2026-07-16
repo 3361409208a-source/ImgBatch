@@ -1,29 +1,30 @@
-# Remove ImgBatch context menus registered for the current user (HKCU).
+# Remove ImgBatch parent menu + CommandStore submenu entries (HKCU).
 
 $ErrorActionPreference = "Stop"
 
-$rels = @(
-    "Software\Classes\*\shell\ImgBatch",
-    "Software\Classes\Directory\shell\ImgBatch",
-    "Software\Classes\Directory\Background\shell\ImgBatch",
-    "Software\Classes\.png\shell\ImgBatch",
-    "Software\Classes\.jpg\shell\ImgBatch",
-    "Software\Classes\.jpeg\shell\ImgBatch",
-    "Software\Classes\.webp\shell\ImgBatch",
-    "Software\Classes\.gif\shell\ImgBatch",
-    "Software\Classes\.bmp\shell\ImgBatch",
-    "Software\Classes\.tif\shell\ImgBatch",
-    "Software\Classes\.tiff\shell\ImgBatch",
-    "Software\Classes\.ico\shell\ImgBatch",
-    "Software\Classes\SystemFileAssociations\image\shell\ImgBatch"
+$actions = @("compress", "convert", "rename", "watermark", "trim", "normalize", "inspect")
+$flat = @(
+    "ImgBatch", "ImgBatchSep",
+    "ImgBatchCompress", "ImgBatchConvert", "ImgBatchRename",
+    "ImgBatchWatermark", "ImgBatchTrim", "ImgBatchNormalize", "ImgBatchInspect"
+)
+$classRoots = @(
+    "*", "Directory", "Directory\Background",
+    ".png", ".jpg", ".jpeg", ".webp", ".gif", ".bmp", ".tif", ".tiff", ".ico",
+    "SystemFileAssociations\image"
 )
 
-foreach ($rel in $rels) {
-    try {
-        [Microsoft.Win32.Registry]::CurrentUser.DeleteSubKeyTree($rel, $false)
-        Write-Host "Removed HKCU:\$rel"
-    } catch {
-        # key missing — ignore
+$hkcu = [Microsoft.Win32.Registry]::CurrentUser
+foreach ($cr in $classRoots) {
+    foreach ($name in $flat) {
+        $rel = "Software\Classes\$cr\shell\$name"
+        try { $hkcu.DeleteSubKeyTree($rel, $false); Write-Host "Removed HKCU:\$rel" } catch {}
+    }
+}
+foreach ($a in $actions) {
+    foreach ($prefix in @("ImgBatch.", "ImgBatch.dir.")) {
+        $rel = "Software\Microsoft\Windows\CurrentVersion\Explorer\CommandStore\shell\$prefix$a"
+        try { $hkcu.DeleteSubKeyTree($rel, $false); Write-Host "Removed HKCU:\$rel" } catch {}
     }
 }
 
