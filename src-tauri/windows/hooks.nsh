@@ -27,12 +27,6 @@
   WriteRegStr SHCTX "Software\Classes\${ROOT}\shell\ImgBatch" "SubCommands" "${SUBCOMMANDS}"
 !macroend
 
-!macro ImgBatchWriteMoreClassParent ROOT SUBCOMMANDS
-  WriteRegStr SHCTX "Software\Classes\${ROOT}\shell\ImgBatchMore" "MUIVerb" "ImgBatch 更多"
-  WriteRegStr SHCTX "Software\Classes\${ROOT}\shell\ImgBatchMore" "Icon" "$INSTDIR\imgbatch.exe,0"
-  WriteRegStr SHCTX "Software\Classes\${ROOT}\shell\ImgBatchMore" "SubCommands" "${SUBCOMMANDS}"
-!macroend
-
 !macro ImgBatchDeleteFlat ROOT
   DeleteRegKey SHCTX "Software\Classes\${ROOT}\shell\ImgBatch"
   DeleteRegKey SHCTX "Software\Classes\${ROOT}\shell\ImgBatchMore"
@@ -103,6 +97,7 @@
   DeleteRegKey SHCTX "Software\Microsoft\Windows\CurrentVersion\Explorer\CommandStore\shell\ImgBatch.gif.extract"
 
   DeleteRegKey SHCTX "Software\Microsoft\Windows\CurrentVersion\Explorer\CommandStore\shell\ImgBatch.misc"
+  DeleteRegKey SHCTX "Software\Microsoft\Windows\CurrentVersion\Explorer\CommandStore\shell\ImgBatch.more"
 !macroend
 
 !macro ImgBatchDeleteDirStore
@@ -152,6 +147,7 @@
   DeleteRegKey SHCTX "Software\Microsoft\Windows\CurrentVersion\Explorer\CommandStore\shell\ImgBatch.dir.gif.wm"
   DeleteRegKey SHCTX "Software\Microsoft\Windows\CurrentVersion\Explorer\CommandStore\shell\ImgBatch.dir.gif.extract"
   DeleteRegKey SHCTX "Software\Microsoft\Windows\CurrentVersion\Explorer\CommandStore\shell\ImgBatch.dir.misc"
+  DeleteRegKey SHCTX "Software\Microsoft\Windows\CurrentVersion\Explorer\CommandStore\shell\ImgBatch.dir.more"
 !macroend
 
 ; Stop one process: silent kill with retries, then taskkill /T fallback.
@@ -326,20 +322,19 @@
   !insertmacro ImgBatchWriteQuickVerb "ImgBatch.dir.gif.wm" "加水印" "gif --gif-mode watermark --auto-run" "%V"
   !insertmacro ImgBatchWriteQuickVerb "ImgBatch.dir.gif.extract" "拆帧导出" "gif --gif-mode extract --auto-run" "%V"
 
-  ; ── Misc flat group (trim / normalize / inspect) for second top-level menu ──
-  !insertmacro ImgBatchWriteParent "ImgBatch.misc" "其他工具" "ImgBatch.trim.p0;ImgBatch.trim.p4;ImgBatch.trim.p8;ImgBatch.normalize.h280;ImgBatch.normalize.h512;ImgBatch.normalize.h1024;ImgBatch.inspect.quick;ImgBatch.inspect.open"
-  !insertmacro ImgBatchWriteParent "ImgBatch.dir.misc" "其他工具" "ImgBatch.dir.trim.p0;ImgBatch.dir.trim.p4;ImgBatch.dir.trim.p8;ImgBatch.dir.normalize.h280;ImgBatch.dir.normalize.h512;ImgBatch.dir.normalize.h1024;ImgBatch.dir.inspect.quick;ImgBatch.dir.inspect.open"
+  ; ── Misc flat group (trim / normalize / inspect / common GIF) ──
+  !insertmacro ImgBatchWriteParent "ImgBatch.misc" "其他工具" "ImgBatch.trim.p0;ImgBatch.trim.p4;ImgBatch.trim.p8;ImgBatch.normalize.h280;ImgBatch.normalize.h512;ImgBatch.normalize.h1024;ImgBatch.inspect.quick;ImgBatch.inspect.open;ImgBatch.gif.optimize;ImgBatch.gif.resize50;ImgBatch.gif.reverse;ImgBatch.gif.extract"
+  !insertmacro ImgBatchWriteParent "ImgBatch.dir.misc" "其他工具" "ImgBatch.dir.trim.p0;ImgBatch.dir.trim.p4;ImgBatch.dir.trim.p8;ImgBatch.dir.normalize.h280;ImgBatch.dir.normalize.h512;ImgBatch.dir.normalize.h1024;ImgBatch.dir.inspect.quick;ImgBatch.dir.inspect.open;ImgBatch.dir.gif.optimize;ImgBatch.dir.gif.resize50;ImgBatch.dir.gif.reverse;ImgBatch.dir.gif.extract"
 
-  ; ── Top-level: Windows shows ~3 cascading submenus per parent ──
-  !insertmacro ImgBatchWriteClassParent "*" "ImgBatch.compress;ImgBatch.convert;ImgBatch.gif"
-  !insertmacro ImgBatchWriteClassParent "Directory" "ImgBatch.dir.compress;ImgBatch.dir.convert;ImgBatch.dir.gif"
-  !insertmacro ImgBatchWriteClassParent "Directory\Background" "ImgBatch.dir.compress;ImgBatch.dir.convert;ImgBatch.dir.gif"
-  !insertmacro ImgBatchWriteClassParent "SystemFileAssociations\image" "ImgBatch.compress;ImgBatch.convert;ImgBatch.gif"
+  ; ── More submenu (rename / watermark / misc) ──
+  !insertmacro ImgBatchWriteParent "ImgBatch.more" "更多" "ImgBatch.rename;ImgBatch.watermark;ImgBatch.misc"
+  !insertmacro ImgBatchWriteParent "ImgBatch.dir.more" "更多" "ImgBatch.dir.rename;ImgBatch.dir.watermark;ImgBatch.dir.misc"
 
-  !insertmacro ImgBatchWriteMoreClassParent "*" "ImgBatch.rename;ImgBatch.watermark;ImgBatch.misc"
-  !insertmacro ImgBatchWriteMoreClassParent "Directory" "ImgBatch.dir.rename;ImgBatch.dir.watermark;ImgBatch.dir.misc"
-  !insertmacro ImgBatchWriteMoreClassParent "Directory\Background" "ImgBatch.dir.rename;ImgBatch.dir.watermark;ImgBatch.dir.misc"
-  !insertmacro ImgBatchWriteMoreClassParent "SystemFileAssociations\image" "ImgBatch.rename;ImgBatch.watermark;ImgBatch.misc"
+  ; ── Single top-level ImgBatch (Windows shows ~3 cascades) ──
+  !insertmacro ImgBatchWriteClassParent "*" "ImgBatch.compress;ImgBatch.convert;ImgBatch.more"
+  !insertmacro ImgBatchWriteClassParent "Directory" "ImgBatch.dir.compress;ImgBatch.dir.convert;ImgBatch.dir.more"
+  !insertmacro ImgBatchWriteClassParent "Directory\Background" "ImgBatch.dir.compress;ImgBatch.dir.convert;ImgBatch.dir.more"
+  !insertmacro ImgBatchWriteClassParent "SystemFileAssociations\image" "ImgBatch.compress;ImgBatch.convert;ImgBatch.more"
 !macroend
 
 !macro NSIS_HOOK_POSTUNINSTALL

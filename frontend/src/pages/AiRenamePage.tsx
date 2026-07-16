@@ -46,14 +46,14 @@ export function AiRenamePage() {
     const text = buildExternalAiRenamePrompt(prompt, fileNames, t('ai_default_user_prompt'));
     try {
       await navigator.clipboard.writeText(text);
-      setStatusMessage(t('ai_metaso_copied'));
     } catch {
-      setStatusMessage(t('ai_metaso_copy_failed'));
+      /* clipboard optional — Rust will inject into Metaso */
     }
 
     try {
       const { invoke } = await import('@tauri-apps/api/core');
-      await invoke('open_metaso_assistant');
+      await invoke('open_metaso_assistant', { promptText: text });
+      setStatusMessage(t('ai_metaso_copied'));
     } catch (e) {
       try {
         const { invoke } = await import('@tauri-apps/api/core');

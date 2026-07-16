@@ -83,10 +83,11 @@ pub fn close_quick_session(app: tauri::AppHandle) -> Result<(), String> {
 }
 
 #[tauri::command]
-pub async fn open_metaso_assistant(app: tauri::AppHandle) -> Result<(), String> {
-    // On Windows, creating a WebviewWindow inside a sync command deadlocks WebView2
-    // and shows a blank page. Must be async (see tauri WebviewWindowBuilder docs).
-    crate::cli::open_metaso_window(&app)
+pub async fn open_metaso_assistant(
+    app: tauri::AppHandle,
+    prompt_text: String,
+) -> Result<(), String> {
+    crate::cli::open_metaso_window(&app, prompt_text)
 }
 
 #[tauri::command]

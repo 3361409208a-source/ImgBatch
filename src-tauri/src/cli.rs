@@ -236,7 +236,46 @@ fn build_quick_window(app: &AppHandle) -> Result<WebviewWindow, String> {
 
 const METASO_URL: &str = "https://metaso.cn/";
 
-pub fn open_metaso_window(app: &AppHandle) -> Result<(), String> {
+fn metaso_fill_script(prompt: &str) -> String {
+    let text = serde_json::to_string(prompt).unwrap_or_else(|_| "\"\"".to_string());
+    format!(
+        r#"(function(){{
+  const text = {text};
+  const nodes = Array.from(document.querySelectorAll('textarea, [contenteditable="true"], input[type="text"]'));
+  for (const el of nodes) {{
+    const r = el.getBoundingClientRect();
+    if (r.width < 100 || r.height < 24) continue;
+    if (r.bottom <= 0 || r.right <= 0 || r.top >= window.innerHeight) continue;
+    if (el instanceof HTMLTextAreaElement || el instanceof HTMLInputElement) {{
+      const proto = el instanceof HTMLTextAreaElement ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype;
+      const desc = Object.getOwnPropertyDescriptor(proto, 'value');
+      if (desc && desc.set) desc.set.call(el, text);
+      else el.value = text;
+      el.dispatchEvent(new Event('input', {{ bubbles: true }}));
+      el.dispatchEvent(new Event('change', {{ bubbles: true }}));
+    }} else if (el.isContentEditable) {{
+      el.textContent = text;
+      el.dispatchEvent(new InputEvent('input', {{ bubbles: true }}));
+    }}
+    el.focus();
+    return true;
+  }}
+  return false;
+}})();"#
+    )
+}
+
+fn schedule_metaso_prompt_inject(window: WebviewWindow, prompt: String) {
+    std::thread::spawn(move || {
+        let script = metaso_fill_script(&prompt);
+        for _ in 0..80 {
+            std::thread::sleep(Duration::from_millis(250));
+            let _ = window.eval(&script);
+        }
+    });
+}
+
+pub fn open_metaso_window(app: &AppHandle, prompt_text: String) -> Result<(), String> {
     if is_shutting_down(app) {
         return Err("Application is shutting down".into());
     }
@@ -245,7 +284,6 @@ pub fn open_metaso_window(app: &AppHandle) -> Result<(), String> {
         .parse()
         .map_err(|e| format!("Invalid metaso URL: {e}"))?;
 
-    // Drop a stale/broken instance (blank WebView2 after sync-create deadlock).
     if let Some(w) = app.get_webview_window("metaso") {
         let _ = w.close();
     }
@@ -264,6 +302,7 @@ pub fn open_metaso_window(app: &AppHandle) -> Result<(), String> {
     };
 
     let _ = w.navigate(url);
+    schedule_metaso_prompt_inject(w.clone(), prompt_text);
     let _ = w.show();
     let _ = w.set_focus();
     Ok(())

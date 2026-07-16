@@ -121,6 +121,8 @@ function Clear-ImgBatchContextMenu {
     }
     Remove-ImgBatchMenuKey $Hive "$storeBase\ImgBatch.convert"
     Remove-ImgBatchMenuKey $Hive "$storeBase\ImgBatch.dir.convert"
+    Remove-ImgBatchMenuKey $Hive "$storeBase\ImgBatch.more"
+    Remove-ImgBatchMenuKey $Hive "$storeBase\ImgBatch.dir.more"
     Remove-ImgBatchMenuKey $Hive "$storeBase\ImgBatch.misc"
     Remove-ImgBatchMenuKey $Hive "$storeBase\ImgBatch.dir.misc"
     foreach ($f in $script:ConvertFormats) {
@@ -173,20 +175,6 @@ function Write-ImgBatchClassParent {
     $key.Close()
 }
 
-function Write-ImgBatchMoreClassParent {
-    param(
-        [Microsoft.Win32.RegistryKey]$Hive,
-        [string]$ClassRoot,
-        [string]$SubCommands
-    )
-    $label = [string]([char]0x66F4) + [char]0x591A
-    $key = $Hive.CreateSubKey("Software\Classes\$ClassRoot\shell\ImgBatchMore")
-    $key.SetValue("MUIVerb", "ImgBatch $label")
-    $key.SetValue("Icon", "$script:ImgBatchExePath,0")
-    $key.SetValue("SubCommands", $SubCommands)
-    $key.Close()
-}
-
 function Register-ImgBatchActionMenu {
     param(
         [Microsoft.Win32.RegistryKey]$Hive,
@@ -234,26 +222,35 @@ function Register-ImgBatchContextMenu {
         Write-ImgBatchStoreVerb $Hive "ImgBatch.dir.convert.$($f.Id)" $label "`"$script:ImgBatchExePath`" --quick convert --format $($f.Ext) --auto-run `"%V`""
     }
 
-    # Windows only shows ~3 cascading submenus under one parent. Keep primary actions
-    # on ImgBatch (compress/convert/gif) and expose the rest via a second top-level entry.
+    # Windows shows ~3 cascading submenus per parent. Single ImgBatch entry:
+    #   压缩 | 格式转换 | 更多(重命名/水印/其他+GIF)
+    $moreLabel = [string]([char]0x66F4) + [char]0x591A
     $miscLabel = [string]([char]0x5176) + [char]0x4ED6 + [char]0x5DE5 + [char]0x5177
-    $fileMiscSub = "ImgBatch.trim.p0;ImgBatch.trim.p4;ImgBatch.trim.p8;ImgBatch.normalize.h280;ImgBatch.normalize.h512;ImgBatch.normalize.h1024;ImgBatch.inspect.quick;ImgBatch.inspect.open"
-    $dirMiscSub = "ImgBatch.dir.trim.p0;ImgBatch.dir.trim.p4;ImgBatch.dir.trim.p8;ImgBatch.dir.normalize.h280;ImgBatch.dir.normalize.h512;ImgBatch.dir.normalize.h1024;ImgBatch.dir.inspect.quick;ImgBatch.dir.inspect.open"
+    $fileMiscSub = @(
+        "ImgBatch.trim.p0", "ImgBatch.trim.p4", "ImgBatch.trim.p8",
+        "ImgBatch.normalize.h280", "ImgBatch.normalize.h512", "ImgBatch.normalize.h1024",
+        "ImgBatch.inspect.quick", "ImgBatch.inspect.open",
+        "ImgBatch.gif.optimize", "ImgBatch.gif.resize50", "ImgBatch.gif.reverse", "ImgBatch.gif.extract"
+    ) -join ";"
+    $dirMiscSub = @(
+        "ImgBatch.dir.trim.p0", "ImgBatch.dir.trim.p4", "ImgBatch.dir.trim.p8",
+        "ImgBatch.dir.normalize.h280", "ImgBatch.dir.normalize.h512", "ImgBatch.dir.normalize.h1024",
+        "ImgBatch.dir.inspect.quick", "ImgBatch.dir.inspect.open",
+        "ImgBatch.dir.gif.optimize", "ImgBatch.dir.gif.resize50", "ImgBatch.dir.gif.reverse", "ImgBatch.dir.gif.extract"
+    ) -join ";"
     Write-ImgBatchStoreParent $Hive "ImgBatch.misc" $miscLabel $fileMiscSub
     Write-ImgBatchStoreParent $Hive "ImgBatch.dir.misc" $miscLabel $dirMiscSub
 
-    $filePrimarySub = "ImgBatch.compress;ImgBatch.convert;ImgBatch.gif"
-    $dirPrimarySub = "ImgBatch.dir.compress;ImgBatch.dir.convert;ImgBatch.dir.gif"
     $fileMoreSub = "ImgBatch.rename;ImgBatch.watermark;ImgBatch.misc"
     $dirMoreSub = "ImgBatch.dir.rename;ImgBatch.dir.watermark;ImgBatch.dir.misc"
+    Write-ImgBatchStoreParent $Hive "ImgBatch.more" $moreLabel $fileMoreSub
+    Write-ImgBatchStoreParent $Hive "ImgBatch.dir.more" $moreLabel $dirMoreSub
 
-    Write-ImgBatchClassParent $Hive "*" $filePrimarySub
-    Write-ImgBatchClassParent $Hive "Directory" $dirPrimarySub
-    Write-ImgBatchClassParent $Hive "Directory\Background" $dirPrimarySub
-    Write-ImgBatchClassParent $Hive "SystemFileAssociations\image" $filePrimarySub
+    $fileTopSub = "ImgBatch.compress;ImgBatch.convert;ImgBatch.more"
+    $dirTopSub = "ImgBatch.dir.compress;ImgBatch.dir.convert;ImgBatch.dir.more"
 
-    Write-ImgBatchMoreClassParent $Hive "*" $fileMoreSub
-    Write-ImgBatchMoreClassParent $Hive "Directory" $dirMoreSub
-    Write-ImgBatchMoreClassParent $Hive "Directory\Background" $dirMoreSub
-    Write-ImgBatchMoreClassParent $Hive "SystemFileAssociations\image" $fileMoreSub
+    Write-ImgBatchClassParent $Hive "*" $fileTopSub
+    Write-ImgBatchClassParent $Hive "Directory" $dirTopSub
+    Write-ImgBatchClassParent $Hive "Directory\Background" $dirTopSub
+    Write-ImgBatchClassParent $Hive "SystemFileAssociations\image" $fileTopSub
 }
