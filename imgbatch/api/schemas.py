@@ -86,12 +86,22 @@ class RenamePreviewResponse(BaseModel):
     mapping: Dict[str, str]
 
 
+class AiRenameParseRequest(BaseModel):
+    content: str
+    file_list: List[str]
+
+
+class AiRenameParseResponse(BaseModel):
+    mapping: Dict[str, str]
+    errors: List[str] = []
+
+
 # ── Task creation ─────────────────────────────────────────────────────────
 
 TaskType = Literal[
     "compress", "convert", "rename", "watermark",
     "ai_rename", "ai_apply", "trim", "inspect",
-    "normalize", "spritesheet",
+    "normalize", "spritesheet", "gif_edit",
 ]
 
 
@@ -133,6 +143,28 @@ class PreviewRequest(BaseModel):
 
 class PreviewResponse(BaseModel):
     data_url: str = Field(..., description='data:image/png;base64,...')
+
+
+# ── GIF info ──────────────────────────────────────────────────────────────
+
+class GifInfoRequest(BaseModel):
+    paths: List[str]
+
+
+class GifInfoItem(BaseModel):
+    path: str
+    is_animated: bool
+    n_frames: int
+    width: int
+    height: int
+    duration_ms: int
+    avg_fps: float
+    loop: int
+    durations: List[int]
+
+
+class GifInfoResponse(BaseModel):
+    items: List[GifInfoItem]
 
 
 # ── Backups ───────────────────────────────────────────────────────────────

@@ -17,6 +17,7 @@ import { TrimPage } from './pages/TrimPage';
 import { InspectPage } from './pages/InspectPage';
 import { NormalizePage } from './pages/NormalizePage';
 import { SpritesheetPage } from './pages/SpritesheetPage';
+import { GifPage } from './pages/GifPage';
 import { api } from './api/client';
 
 export default function App() {
@@ -77,6 +78,8 @@ export default function App() {
         return <NormalizePage />;
       case 'spritesheet':
         return <SpritesheetPage />;
+      case 'gif':
+        return <GifPage />;
     }
   };
 

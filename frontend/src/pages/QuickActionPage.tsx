@@ -62,6 +62,12 @@ const ACTION_META: Record<
     accent: '#475569',
     height: 520,
   },
+  gif: {
+    label: 'GIF 动图',
+    hint: '优化、缩放、拆帧等动图编辑',
+    accent: '#BE185D',
+    height: 520,
+  },
 };
 
 const POSITIONS = [
@@ -87,6 +93,16 @@ interface LaunchPayload {
   paths?: string[];
   out?: string | null;
   targetFmt?: string | null;
+  quality?: number | null;
+  resizePct?: number | null;
+  padding?: number | null;
+  targetHeight?: number | null;
+  renameMode?: string | null;
+  wmPosition?: string | null;
+  wmText?: string | null;
+  autoRun?: boolean | null;
+  gifMode?: string | null;
+  speedFactor?: number | null;
 }
 
 function normalizeTargetFmt(fmt: string): string {
@@ -304,8 +320,10 @@ export function QuickActionPage() {
   const [doBackup, setDoBackup] = useState(true);
   const [out, setOut] = useState('');
   const [presetConvertFmt, setPresetConvertFmt] = useState<string | null>(null);
+  const [gifMode, setGifMode] = useState('optimize');
+  const [speedFactor, setSpeedFactor] = useState(2);
 
-  const autoConvertRef = useRef(false);
+  const autoRunRef = useRef(false);
   const meta = ACTION_META[action] || ACTION_META.compress;
 
   const applyPayload = useCallback(async (payload: LaunchPayload) => {
@@ -313,23 +331,33 @@ export function QuickActionPage() {
     setError('');
     setDoneMsg('');
     setInspectRows([]);
-    autoConvertRef.current = false;
+    autoRunRef.current = false;
     const act = (payload.quickAction || 'compress').toLowerCase();
     setAction(act);
     void syncWindowChrome(act);
     if (payload.out) setOut(payload.out);
+    if (payload.quality != null) setQuality(payload.quality);
+    if (payload.resizePct != null) setResizePct(payload.resizePct);
+    if (payload.padding != null) setPadding(payload.padding);
+    if (payload.targetHeight != null) setTargetHeight(payload.targetHeight);
+    if (payload.renameMode) setRenameMode(payload.renameMode);
+    if (payload.wmPosition) setWmPosition(payload.wmPosition);
+    if (payload.wmText) setWmText(payload.wmText);
+    if (payload.gifMode) setGifMode(payload.gifMode);
+    if (payload.speedFactor != null) setSpeedFactor(payload.speedFactor);
     if (payload.targetFmt) {
       const fmt = normalizeTargetFmt(payload.targetFmt);
       setTargetFmt(fmt);
       if (act === 'convert') {
         setPresetConvertFmt(fmt);
-        autoConvertRef.current = true;
       } else {
         setPresetConvertFmt(null);
       }
     } else {
       setPresetConvertFmt(null);
     }
+    if (payload.autoRun) autoRunRef.current = true;
+    if (act === 'convert' && payload.autoRun) autoRunRef.current = true;
     const paths = payload.paths || [];
     if (paths.length === 0) {
       setFiles([]);
@@ -390,7 +418,13 @@ export function QuickActionPage() {
     [imageFiles],
   );
 
-  const inspectTargets = action === 'inspect' ? pngFiles : imageFiles;
+  const inspectTargets = useMemo(() => {
+    if (action === 'inspect') return pngFiles;
+    if (action === 'gif') {
+      return imageFiles.filter((f) => extOf(f.name) === '.gif' || extOf(f.path) === '.gif');
+    }
+    return imageFiles;
+  }, [action, pngFiles, imageFiles]);
 
   const removeFile = (path: string) => {
     setFiles((prev) => prev.filter((f) => f.path !== path && f.name !== path));
@@ -426,14 +460,14 @@ export function QuickActionPage() {
         return {
           mode: renameMode,
           prefix: renamePrefix,
-          suffix: renameSuffix,
+          suffix: renameSuffix || '_bak',
           find: renameFind,
           replace: renameReplace,
           seq_template: 'photo_{num}',
           seq_start: 1,
           seq_digits: 3,
-          lowercase: false,
-          uppercase: false,
+          lowercase: renameMode === 'lowercase',
+          uppercase: renameMode === 'uppercase',
         };
       case 'watermark':
         return {
@@ -464,6 +498,27 @@ export function QuickActionPage() {
         };
       case 'inspect':
         return {};
+      case 'gif': {
+        const base: Record<string, unknown> = {
+          mode: gifMode,
+          do_backup: doBackup,
+          replace,
+          out: outVal,
+          resize_pct: resizePct,
+          speed_factor: gifMode === 'speed' ? speedFactor : undefined,
+          colors: gifMode === 'reduce_colors' ? 128 : 256,
+          optimize: true,
+        };
+        if (gifMode === 'watermark') {
+          base.watermark = {
+            type: 'text',
+            text: wmText,
+            opacity: wmOpacity / 100,
+            position: wmPosition,
+          };
+        }
+        return base;
+      }
       default:
         return {};
     }
@@ -489,9 +544,10 @@ export function QuickActionPage() {
     setRunning(true);
     setProgress(0);
     setMessage('启动中…');
+    const taskType = action === 'gif' ? 'gif_edit' : action;
     try {
       const res = await api.createTask({
-        type: action,
+        type: taskType,
         folder,
         file_list: inspectTargets.map((f) => f.name),
         params: buildParams(),
@@ -530,18 +586,23 @@ export function QuickActionPage() {
   };
 
   useEffect(() => {
-    if (!autoConvertRef.current || loading || running) return;
-    if (action !== 'convert' || !folder || inspectTargets.length === 0) return;
-    autoConvertRef.current = false;
+    if (!autoRunRef.current || loading || running) return;
+    if (!folder || inspectTargets.length === 0) return;
+    autoRunRef.current = false;
     void handleStart();
   }, [loading, running, action, folder, inspectTargets.length]);
 
   const handleClose = async () => {
     try {
-      const { getCurrentWindow } = await import('@tauri-apps/api/window');
-      await getCurrentWindow().close();
+      const { invoke } = await import('@tauri-apps/api/core');
+      await invoke('close_quick_session');
     } catch {
-      window.close();
+      try {
+        const { getCurrentWindow } = await import('@tauri-apps/api/window');
+        await getCurrentWindow().close();
+      } catch {
+        window.close();
+      }
     }
   };
 

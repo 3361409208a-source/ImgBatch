@@ -9,6 +9,7 @@ import {
   ScanSearch,
   Ruler,
   LayoutGrid,
+  Film,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -21,7 +22,8 @@ export type TabKey =
   | 'trim'
   | 'inspect'
   | 'normalize'
-  | 'spritesheet';
+  | 'spritesheet'
+  | 'gif';
 
 const TABS: { key: TabKey; icon: LucideIcon }[] = [
   { key: 'compress', icon: ImageDown },
@@ -33,6 +35,7 @@ const TABS: { key: TabKey; icon: LucideIcon }[] = [
   { key: 'inspect', icon: ScanSearch },
   { key: 'normalize', icon: Ruler },
   { key: 'spritesheet', icon: LayoutGrid },
+  { key: 'gif', icon: Film },
 ];
 
 const TAB_I18N: Record<TabKey, string> = {
@@ -45,6 +48,7 @@ const TAB_I18N: Record<TabKey, string> = {
   inspect: 'tab_inspect',
   normalize: 'tab_normalize',
   spritesheet: 'tab_spritesheet',
+  gif: 'tab_gif',
 };
 
 interface TabLayoutProps {

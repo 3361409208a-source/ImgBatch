@@ -40,6 +40,11 @@ def compress_image(
         OSError: On disk I/O errors.
     """
     ext = os.path.splitext(dst)[1].lower()
+    src_ext = os.path.splitext(src)[1].lower()
+    if src_ext == '.gif' and ext == '.gif':
+        from .gif import compress_gif_animated
+        return compress_gif_animated(src, dst, resize_pct=resize_pct)
+
     with Image.open(src) as img:
         original_exif = img.info.get('exif')
         img = convert_to_rgb_if_needed(img, ext)

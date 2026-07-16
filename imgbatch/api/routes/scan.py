@@ -13,6 +13,8 @@ from imgbatch.core.common import (
 )
 
 from ..schemas import (
+    AiRenameParseRequest,
+    AiRenameParseResponse,
     CompressEstimateRequest,
     CompressEstimateResponse,
     FileInfo,
@@ -114,3 +116,21 @@ async def rename_preview(req: RenamePreviewRequest) -> RenamePreviewResponse:
         uppercase=req.uppercase,
     )
     return RenamePreviewResponse(mapping=mapping)
+
+
+@router.post("/rename/ai-parse")
+async def ai_rename_parse(req: AiRenameParseRequest) -> AiRenameParseResponse:
+    from imgbatch.core.ai_rename import parse_ai_rename_response
+
+    if not req.content.strip():
+        return AiRenameParseResponse(mapping={}, errors=["Empty content"])
+    if not req.file_list:
+        return AiRenameParseResponse(mapping={}, errors=["Empty file list"])
+
+    mapping = parse_ai_rename_response(req.content, req.file_list)
+    if not any(orig != new for orig, new in mapping.items()):
+        return AiRenameParseResponse(
+            mapping=mapping,
+            errors=["Could not parse any rename suggestions from the pasted text"],
+        )
+    return AiRenameParseResponse(mapping=mapping)

@@ -77,6 +77,19 @@ pub fn quick_window_ready(app: tauri::AppHandle) -> Result<(), String> {
 }
 
 #[tauri::command]
+pub fn close_quick_session(app: tauri::AppHandle) -> Result<(), String> {
+    crate::cli::on_quick_window_closed(&app);
+    Ok(())
+}
+
+#[tauri::command]
+pub async fn open_metaso_assistant(app: tauri::AppHandle) -> Result<(), String> {
+    // On Windows, creating a WebviewWindow inside a sync command deadlocks WebView2
+    // and shows a blank page. Must be async (see tauri WebviewWindowBuilder docs).
+    crate::cli::open_metaso_window(&app)
+}
+
+#[tauri::command]
 pub fn open_path(path: String) -> Result<(), String> {
     // Use OS default handler without deprecated shell.open
     #[cfg(target_os = "windows")]

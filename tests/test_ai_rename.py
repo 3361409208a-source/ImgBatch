@@ -43,3 +43,13 @@ class TestParseAIResponse:
         result = _parse_ai_response(content, ['a.jpg'])
         assert '<' not in result[0]['new']
         assert '>' not in result[0]['new']
+
+
+class TestParseAiRenameResponse:
+    def test_mapping_dict(self):
+        from imgbatch.core.ai_rename import parse_ai_rename_response
+
+        content = '[{"original": "a.jpg", "new": "player1.jpg"}]'
+        mapping = parse_ai_rename_response(content, ['a.jpg', 'b.jpg'])
+        assert mapping['a.jpg'] == 'player1.jpg'
+        assert mapping['b.jpg'] == 'b.jpg'

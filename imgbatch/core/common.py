@@ -77,6 +77,10 @@ def _file_info(f: Path, folder_path: Optional[Path]) -> Optional[dict]:
         with Image.open(f) as img:
             dims = f'{img.width}x{img.height}'
             fmt = img.format or f.suffix[1:]
+            if f.suffix.lower() == '.gif':
+                count = int(getattr(img, 'n_frames', 1) or 1)
+                if count > 1:
+                    fmt = f'GIF ({count}f)'
     except (UnidentifiedImageError, OSError):
         dims = '?'
         fmt = f.suffix[1:]

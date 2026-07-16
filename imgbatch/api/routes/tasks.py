@@ -194,6 +194,22 @@ def _dispatch_spritesheet(state, folder, file_list, params, on_progress=None):
     )
 
 
+def _dispatch_gif_edit(state, folder, file_list, params, on_progress=None):
+    from imgbatch.core.gif import run_gif_batch
+    do_backup = params.get("do_backup", False)
+    backup_fn = _backup_fn if do_backup else None
+    return run_gif_batch(
+        state, folder, file_list,
+        mode=params.get("mode", "optimize"),
+        params=params,
+        do_backup=do_backup,
+        replace=params.get("replace", True),
+        out=params.get("out"),
+        on_progress=on_progress,
+        backup_fn=backup_fn,
+    )
+
+
 DISPATCHERS = {
     "compress": _dispatch_compress,
     "convert": _dispatch_convert,
@@ -205,6 +221,7 @@ DISPATCHERS = {
     "inspect": _dispatch_inspect,
     "normalize": _dispatch_normalize,
     "spritesheet": _dispatch_spritesheet,
+    "gif_edit": _dispatch_gif_edit,
 }
 
 

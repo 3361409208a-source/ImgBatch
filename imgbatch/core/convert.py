@@ -18,6 +18,11 @@ def convert_image(src: str, dst: str, target_fmt: str) -> int:
     Returns new file size in bytes.
     """
     target_ext_l = target_fmt.lower()
+    src_ext = os.path.splitext(src)[1].lower()
+    if src_ext == '.gif' and target_ext_l == '.gif':
+        from .gif import convert_gif_to_gif
+        return convert_gif_to_gif(src, dst)
+
     with Image.open(src) as img:
         img = convert_to_rgb_if_needed(img, target_ext_l)
         save_fmt = get_save_format(target_ext_l)

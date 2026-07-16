@@ -5,6 +5,7 @@ import type {
   FilterRequest,
   PreviewResponse,
   RenamePreviewResponse,
+  AiRenameParseResponse,
   ScanResponse,
   TaskCreateRequest,
   TaskCreateResponse,
@@ -120,6 +121,8 @@ export const api = {
     apiPost<CompressEstimateResponse>('/compress/estimate', { files, quality, resize_pct }),
   renamePreview: (req: Record<string, unknown>) =>
     apiPost<RenamePreviewResponse>('/rename/preview', req),
+  renameAiParse: (content: string, fileList: string[]) =>
+    apiPost<AiRenameParseResponse>('/rename/ai-parse', { content, file_list: fileList }),
   previewThumb: (path: string, max_size?: number) =>
     apiPost<PreviewResponse>('/preview/thumb', { path, max_size: max_size ?? 300 }),
   createTask: (req: TaskCreateRequest) =>
@@ -136,4 +139,13 @@ export const api = {
     apiDelete<{ deleted: number }>('/backups', { backups }),
   undo: () => apiPost<UndoResponse>('/undo', {}),
   undoStatus: () => apiGet<{ can_undo: boolean }>('/undo'),
+  gifInfo: (paths: string[]) =>
+    apiPost<{ items: Array<{
+      path: string;
+      is_animated: boolean;
+      n_frames: number;
+      duration_ms: number;
+      avg_fps: number;
+      loop: number;
+    }> }>('/gif/info', { paths }),
 };

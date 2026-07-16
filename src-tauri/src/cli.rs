@@ -11,6 +11,7 @@ const QUICK_ACTIONS: &[&str] = &[
     "trim",
     "normalize",
     "inspect",
+    "gif",
 ];
 
 const QUICK_MERGE_DELAY_MS: u64 = 150;
@@ -28,6 +29,16 @@ pub struct LaunchPayload {
     pub paths: Vec<String>,
     pub out: Option<String>,
     pub target_fmt: Option<String>,
+    pub quality: Option<u8>,
+    pub resize_pct: Option<u8>,
+    pub padding: Option<u8>,
+    pub target_height: Option<u16>,
+    pub rename_mode: Option<String>,
+    pub wm_position: Option<String>,
+    pub wm_text: Option<String>,
+    pub auto_run: Option<bool>,
+    pub gif_mode: Option<String>,
+    pub speed_factor: Option<f32>,
 }
 
 pub fn parse_args_from<I, S>(args: I) -> LaunchPayload
@@ -56,6 +67,54 @@ where
             if let Some(fmt) = iter.next() {
                 payload.target_fmt = Some(normalize_format(&fmt));
             }
+        } else if arg == "--quality" {
+            if let Some(v) = iter.next() {
+                if let Ok(n) = v.parse::<u8>() {
+                    payload.quality = Some(n);
+                }
+            }
+        } else if arg == "--resize" {
+            if let Some(v) = iter.next() {
+                if let Ok(n) = v.parse::<u8>() {
+                    payload.resize_pct = Some(n);
+                }
+            }
+        } else if arg == "--padding" {
+            if let Some(v) = iter.next() {
+                if let Ok(n) = v.parse::<u8>() {
+                    payload.padding = Some(n);
+                }
+            }
+        } else if arg == "--target-height" {
+            if let Some(v) = iter.next() {
+                if let Ok(n) = v.parse::<u16>() {
+                    payload.target_height = Some(n);
+                }
+            }
+        } else if arg == "--rename-mode" {
+            if let Some(v) = iter.next() {
+                payload.rename_mode = Some(v.to_lowercase());
+            }
+        } else if arg == "--wm-position" {
+            if let Some(v) = iter.next() {
+                payload.wm_position = Some(v.to_lowercase());
+            }
+        } else if arg == "--wm-text" {
+            if let Some(v) = iter.next() {
+                payload.wm_text = Some(v.trim_matches('"').to_string());
+            }
+        } else if arg == "--gif-mode" {
+            if let Some(v) = iter.next() {
+                payload.gif_mode = Some(v.to_lowercase());
+            }
+        } else if arg == "--speed" {
+            if let Some(v) = iter.next() {
+                if let Ok(n) = v.parse::<f32>() {
+                    payload.speed_factor = Some(n);
+                }
+            }
+        } else if arg == "--auto-run" {
+            payload.auto_run = Some(true);
         } else if arg.starts_with('-') {
             // ignore unknown flags
         } else if !arg.is_empty() && !is_shell_placeholder(&arg) {
@@ -109,7 +168,45 @@ fn build_window_from_config(app: &AppHandle, label: &str) -> Result<WebviewWindo
         .map_err(|e| format!("Failed to create {label} window: {e}"))
 }
 
+fn is_shutting_down(app: &AppHandle) -> bool {
+    *app.state::<crate::AppState>().shutting_down.lock().unwrap()
+}
+
+fn begin_shutdown(app: &AppHandle) -> bool {
+    let state = app.state::<crate::AppState>();
+    let mut flag = state.shutting_down.lock().unwrap();
+    if *flag {
+        return false;
+    }
+    *flag = true;
+    true
+}
+
+fn destroy_all_windows(app: &AppHandle) {
+    let labels: Vec<String> = app.webview_windows().keys().cloned().collect();
+    for label in labels {
+        destroy_window_if_exists(app, &label);
+    }
+}
+
+pub fn shutdown_app(app: &AppHandle) {
+    if !begin_shutdown(app) {
+        return;
+    }
+    cancel_pending_quick_flush(app);
+    destroy_all_windows(app);
+    crate::sidecar::kill_sidecar(app);
+    app.exit(0);
+}
+
 pub fn ensure_main_window(app: &AppHandle) -> Result<WebviewWindow, String> {
+    if is_shutting_down(app) {
+        return Err("Application is shutting down".into());
+    }
+    let profile = *app.state::<crate::AppState>().launch_profile.lock().unwrap();
+    if profile == LaunchProfile::QuickOnly {
+        return Err("Main window is not used in quick-only mode".into());
+    }
     if let Some(w) = app.get_webview_window("main") {
         return Ok(w);
     }
@@ -125,7 +222,7 @@ fn build_quick_window(app: &AppHandle) -> Result<WebviewWindow, String> {
         return build_window_from_config(app, "quick");
     }
 
-    WebviewWindowBuilder::new(app, "quick", WebviewUrl::App("index.html".into()))
+    WebviewWindowBuilder::new(app, "quick", WebviewUrl::App("quick.html".into()))
         .title("ImgBatch 快捷操作")
         .inner_size(420.0, 580.0)
         .min_inner_size(360.0, 420.0)
@@ -137,6 +234,41 @@ fn build_quick_window(app: &AppHandle) -> Result<WebviewWindow, String> {
         .map_err(|e| format!("Failed to create quick window: {e}"))
 }
 
+const METASO_URL: &str = "https://metaso.cn/";
+
+pub fn open_metaso_window(app: &AppHandle) -> Result<(), String> {
+    if is_shutting_down(app) {
+        return Err("Application is shutting down".into());
+    }
+
+    let url: tauri::Url = METASO_URL
+        .parse()
+        .map_err(|e| format!("Invalid metaso URL: {e}"))?;
+
+    // Drop a stale/broken instance (blank WebView2 after sync-create deadlock).
+    if let Some(w) = app.get_webview_window("metaso") {
+        let _ = w.close();
+    }
+
+    let w = if window_config(app, "metaso").is_some() {
+        build_window_from_config(app, "metaso")?
+    } else {
+        WebviewWindowBuilder::new(app, "metaso", WebviewUrl::External(url.clone()))
+            .title("秘塔 AI 搜索")
+            .inner_size(960.0, 720.0)
+            .min_inner_size(640.0, 480.0)
+            .center()
+            .visible(false)
+            .build()
+            .map_err(|e| format!("Failed to create metaso window: {e}"))?
+    };
+
+    let _ = w.navigate(url);
+    let _ = w.show();
+    let _ = w.set_focus();
+    Ok(())
+}
+
 fn action_title(action: &str) -> &'static str {
     match action {
         "compress" => "图片压缩",
@@ -146,6 +278,7 @@ fn action_title(action: &str) -> &'static str {
         "trim" => "裁边",
         "normalize" => "规范化",
         "inspect" => "图片检查",
+        "gif" => "GIF 动图",
         _ => "快捷操作",
     }
 }
@@ -161,7 +294,17 @@ fn merge_quick_buffer(app: &AppHandle, payload: &LaunchPayload) {
     match buf.as_mut() {
         Some(existing)
             if existing.quick_action == payload.quick_action
-                && existing.target_fmt == payload.target_fmt =>
+                && existing.target_fmt == payload.target_fmt
+                && existing.quality == payload.quality
+                && existing.resize_pct == payload.resize_pct
+                && existing.padding == payload.padding
+                && existing.target_height == payload.target_height
+                && existing.rename_mode == payload.rename_mode
+                && existing.wm_position == payload.wm_position
+                && existing.wm_text == payload.wm_text
+                && existing.gif_mode == payload.gif_mode
+                && existing.speed_factor == payload.speed_factor
+                && existing.auto_run == payload.auto_run =>
         {
             for p in &payload.paths {
                 let norm = normalize_path(p);
@@ -207,6 +350,10 @@ fn destroy_window_if_exists(app: &AppHandle, label: &str) {
 }
 
 fn dispatch_quick_launch(app: &AppHandle, payload: &LaunchPayload) -> Result<(), String> {
+    if is_shutting_down(app) {
+        return Ok(());
+    }
+
     store_pending_launch(app, payload);
 
     let state = app.state::<crate::AppState>();
@@ -278,6 +425,9 @@ pub fn queue_quick_launch(app: &AppHandle, payload: &LaunchPayload) -> Result<()
 }
 
 pub fn show_quick_window(app: &AppHandle) -> Result<(), String> {
+    if is_shutting_down(app) {
+        return Ok(());
+    }
     let window = app
         .get_webview_window("quick")
         .ok_or_else(|| "Quick window not found".to_string())?;
@@ -301,13 +451,12 @@ pub fn on_quick_window_closed(app: &AppHandle) {
     let state = app.state::<crate::AppState>();
     let profile = *state.launch_profile.lock().unwrap();
     if profile == LaunchProfile::QuickOnly {
-        destroy_window_if_exists(app, "main");
-        crate::sidecar::kill_sidecar(app);
-        app.exit(0);
+        shutdown_app(app);
         return;
     }
 
     let restore_main = *state.main_hidden_for_quick.lock().unwrap();
+    destroy_window_if_exists(app, "quick");
     if restore_main {
         *state.main_hidden_for_quick.lock().unwrap() = false;
         focus_main(app);

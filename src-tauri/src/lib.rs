@@ -17,6 +17,7 @@ pub struct AppState {
     pub main_hidden_for_quick: Mutex<bool>,
     pub quick_buffer: Mutex<Option<LaunchPayload>>,
     pub quick_flush_gen: Mutex<u64>,
+    pub shutting_down: Mutex<bool>,
 }
 
 impl Default for AppState {
@@ -29,6 +30,7 @@ impl Default for AppState {
             main_hidden_for_quick: Mutex::new(false),
             quick_buffer: Mutex::new(None),
             quick_flush_gen: Mutex::new(0),
+            shutting_down: Mutex::new(false),
         }
     }
 }
@@ -70,12 +72,13 @@ pub fn run() {
             Ok(())
         })
         .on_window_event(|window, event| {
-            if let WindowEvent::CloseRequested { .. } = event {
+            if let WindowEvent::CloseRequested { api, .. } = event {
                 let label = window.label().to_string();
                 let app = window.app_handle().clone();
                 if label == "main" {
                     sidecar::kill_sidecar(&app);
                 } else if label == "quick" {
+                    api.prevent_close();
                     cli::on_quick_window_closed(&app);
                 }
             }
@@ -89,6 +92,8 @@ pub fn run() {
             commands::get_launch_payload,
             commands::get_window_label,
             commands::quick_window_ready,
+            commands::close_quick_session,
+            commands::open_metaso_assistant,
         ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application")

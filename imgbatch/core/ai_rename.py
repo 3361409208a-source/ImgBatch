@@ -26,13 +26,26 @@ DEEPSEEK_MODEL = "deepseek-chat"
 MAX_BATCH = 100
 MAX_RETRIES = 3
 RETRY_DELAYS = [1.0, 2.0, 4.0]  # seconds
-DEFAULT_PROMPT = (
-    "\u8bf7\u5206\u6790\u4ee5\u4e0b\u56fe\u7247\u6587\u4ef6\u540d\u5217\u8868\uff0c"
-    "\u4e3a\u6bcf\u4e2a\u6587\u4ef6\u751f\u6210\u4e00\u4e2a\u7b80\u6d01\u89c4\u8303"
-    "\u7684\u82f1\u6587\u6587\u4ef6\u540d\uff08\u542b\u6269\u5c55\u540d\uff09\uff0c"
-    "\u683c\u5f0f\u5982\uff1aplayer_name-position-country.jpg\u3002"
-    "\u53ea\u8fd4\u56deJSON\u6570\u7ec4\uff0c\u4e0d\u8981\u5176\u4ed6\u5185\u5bb9\u3002"
+DEFAULT_USER_PROMPT = (
+    "\u4e3a\u6bcf\u4e2a\u56fe\u7247\u751f\u6210\u7b80\u6d01\u89c4\u8303\u7684\u82f1\u6587\u6587\u4ef6\u540d"
+    "\uff08\u4fdd\u7559\u6269\u5c55\u540d\uff09\uff0c"
+    "\u4f8b\u5982 player_name-position-country.jpg\u3002"
 )
+# Backward-compatible alias used by CLI / legacy UI.
+DEFAULT_PROMPT = DEFAULT_USER_PROMPT
+
+_USER_MESSAGE_FORMAT = (
+    "\n\nReturn only a JSON array (double quotes). "
+    'Each item: {"original": "filename", "new": "newname"}. '
+    "No other text."
+)
+
+
+def build_ai_user_message(user_prompt: str, file_names: List[str]) -> str:
+    """Combine user instruction, file list, and internal format constraints."""
+    instruction = (user_prompt or DEFAULT_USER_PROMPT).strip()
+    files = "\n".join(file_names)
+    return f"{instruction}\n\nName list:\n{files}{_USER_MESSAGE_FORMAT}"
 SYSTEM_PROMPT = (
     "You are a file naming assistant. "
     "Return a standard JSON array (double quotes). "
@@ -74,7 +87,7 @@ def _call_deepseek(
         'model': DEEPSEEK_MODEL,
         'messages': [
             {'role': 'system', 'content': SYSTEM_PROMPT},
-            {'role': 'user', 'content': f'{prompt}\n\nName list:\n' + '\n'.join(file_names)},
+            {'role': 'user', 'content': build_ai_user_message(prompt, file_names)},
         ],
         'temperature': 0.7,
         'max_tokens': 4096,
@@ -198,6 +211,18 @@ def _parse_ai_response(content: str, file_names: List[str]) -> List[dict]:
             })
 
     return normalized
+
+
+def parse_ai_rename_response(content: str, file_names: List[str]) -> Dict[str, str]:
+    """Parse pasted AI text into original -> suggested name mapping."""
+    items = _parse_ai_response(content, file_names)
+    results: Dict[str, str] = {}
+    for item in items:
+        results[item['original']] = item['new']
+    for fn in file_names:
+        if fn not in results:
+            results[fn] = fn
+    return results
 
 
 def run_ai_rename(

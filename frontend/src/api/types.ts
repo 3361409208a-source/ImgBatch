@@ -31,6 +31,11 @@ export interface RenamePreviewResponse {
   mapping: Record<string, string>;
 }
 
+export interface AiRenameParseResponse {
+  mapping: Record<string, string>;
+  errors: string[];
+}
+
 export interface TaskCreateRequest {
   type: string;
   folder: string;

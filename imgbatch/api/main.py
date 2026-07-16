@@ -21,7 +21,7 @@ import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from imgbatch.api.routes import backups, config, health, preview, scan, tasks, undo
+from imgbatch.api.routes import backups, config, gif, health, preview, scan, tasks, undo
 
 app = FastAPI(title="ImgBatch API", version="3.0")
 app.add_middleware(
@@ -37,6 +37,7 @@ app.include_router(health.router)
 app.include_router(config.router, prefix="/config")
 app.include_router(scan.router)
 app.include_router(preview.router, prefix="/preview")
+app.include_router(gif.router, prefix="/gif")
 app.include_router(tasks.router, prefix="/tasks")
 app.include_router(backups.router, prefix="/backups")
 app.include_router(undo.router, prefix="/undo")
