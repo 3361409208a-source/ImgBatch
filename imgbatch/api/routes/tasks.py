@@ -142,6 +142,7 @@ def _dispatch_trim(state, folder, file_list, params, on_progress=None):
         do_backup=do_backup,
         replace=params.get("replace", True),
         out=params.get("out"),
+        alpha_threshold=params.get("alpha_threshold", 28),
         on_progress=on_progress,
         backup_fn=backup_fn,
     )

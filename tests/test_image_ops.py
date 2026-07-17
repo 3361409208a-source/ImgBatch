@@ -7,7 +7,7 @@ import os
 from PIL import Image
 
 from imgbatch.core.watermark import add_text_watermark, add_image_watermark
-from imgbatch.core.trim import trim_image
+from imgbatch.core.trim import trim_image, run_trim_batch
 from imgbatch.core.normalize import normalize_image
 from imgbatch.core.inspect import inspect_single
 
@@ -51,6 +51,38 @@ class TestTrimImage:
             assert img.width <= 110
             assert img.height <= 80
 
+    def test_trim_webp_transparent_border(self, tmp_png_dir):
+        src = os.path.join(tmp_png_dir, 'border1.png')
+        webp_src = os.path.join(tmp_png_dir, 'border1.webp')
+        webp_dst = os.path.join(tmp_png_dir, 'trimmed.webp')
+
+        with Image.open(src) as img:
+            img.save(webp_src, format='WEBP', lossless=True)
+
+        trim_image(webp_src, webp_dst, padding=2)
+
+        assert os.path.exists(webp_dst)
+        with Image.open(webp_dst) as img:
+            assert img.width <= 110
+            assert img.height <= 80
+
+    def test_trim_webp_white_border(self, tmp_png_dir):
+        webp_src = os.path.join(tmp_png_dir, 'white_border.webp')
+        webp_dst = os.path.join(tmp_png_dir, 'white_border_trimmed.webp')
+
+        img = Image.new('RGB', (200, 150), (255, 255, 255))
+        for x in range(50, 150):
+            for y in range(40, 110):
+                img.putpixel((x, y), (0, 255, 0))
+        img.save(webp_src, format='WEBP', quality=85)
+
+        trim_image(webp_src, webp_dst, padding=0)
+
+        assert os.path.exists(webp_dst)
+        with Image.open(webp_dst) as trimmed:
+            assert trimmed.width <= 110
+            assert trimmed.height <= 80
+
     def test_trim_fully_transparent(self, tmp_png_dir):
         """Fully transparent image should be saved as-is."""
         src = os.path.join(tmp_png_dir, 'empty.png')
@@ -68,6 +100,32 @@ class TestTrimImage:
             # Solid 80x60 + padding 4 on each side → 88x68
             assert img.width <= 90
             assert img.height <= 70
+
+
+class TestTrimBatch:
+    def test_run_trim_batch_includes_webp(self, tmp_png_dir):
+        src = os.path.join(tmp_png_dir, 'border1.png')
+        webp_name = 'border1.webp'
+        webp_src = os.path.join(tmp_png_dir, webp_name)
+        with Image.open(src) as img:
+            img.save(webp_src, format='WEBP', lossless=True)
+
+        out_dir = os.path.join(tmp_png_dir, 'out')
+        os.makedirs(out_dir)
+
+        class _State:
+            cancelled = False
+
+        result = run_trim_batch(
+            _State(), tmp_png_dir, [webp_name, 'solid.png'],
+            padding=2, do_backup=False, replace=False, out=out_dir,
+        )
+        assert result['total_before'] > 0
+        trimmed = os.path.join(out_dir, webp_name)
+        assert os.path.exists(trimmed)
+        with Image.open(trimmed) as img:
+            assert img.width <= 110
+            assert img.height <= 80
 
 
 class TestNormalizeImage:

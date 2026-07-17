@@ -192,18 +192,23 @@ def cmd_watermark(args):
 
 
 def cmd_trim(args):
+    from ..core.common import TRIM_SUPPORTED_EXT
+
     folder = os.path.abspath(args.folder)
     files = scan_folder(folder, recursive=args.recursive)
-    png_files = [f['name'] for f in files if f['name'].lower().endswith('.png')]
-    if not png_files:
-        print('No PNG files found.')
+    trim_files = [
+        f['name'] for f in files
+        if os.path.splitext(f['name'])[1].lower() in TRIM_SUPPORTED_EXT
+    ]
+    if not trim_files:
+        print('No trim-compatible image files found (PNG, WebP, GIF, TIFF, ICO, AVIF).')
         return 1
 
-    print(f'Found {len(png_files)} PNG files in {folder}')
+    print(f'Found {len(trim_files)} trim-compatible files in {folder}')
 
     state = CLITaskState()
     result = run_trim_batch(
-        state, folder, png_files,
+        state, folder, trim_files,
         args.padding, args.backup, not args.output, args.output,
         on_progress=_on_progress_cli(state),
     )
@@ -440,7 +445,7 @@ def build_parser() -> argparse.ArgumentParser:
     p.set_defaults(func=cmd_watermark)
 
     # trim
-    p = subparsers.add_parser('trim', help='Trim transparent edges from PNGs')
+    p = subparsers.add_parser('trim', help='Trim transparent edges (PNG, WebP, etc.)')
     add_folder(p)
     p.add_argument('--padding', type=int, default=4, help='Padding pixels (default: 4)')
     p.set_defaults(func=cmd_trim)

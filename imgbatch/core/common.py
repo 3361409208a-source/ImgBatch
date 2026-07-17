@@ -20,6 +20,8 @@ _BASE_CONVERT_TARGETS = [
 QUALITY_FORMATS = {'.jpg', '.jpeg', '.webp', '.avif'}
 # Formats that do not store an alpha channel — flatten onto white when needed.
 NO_ALPHA_EXT = {'.jpg', '.jpeg', '.bmp'}
+# Formats supported by transparent-edge trim (must preserve alpha).
+TRIM_SUPPORTED_EXT = {'.png', '.webp', '.gif', '.tiff', '.tif', '.ico', '.avif'}
 
 SAVE_FORMAT_MAP = {
     '.jpg': 'JPEG',
