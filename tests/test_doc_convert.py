@@ -22,7 +22,61 @@ def test_doc_catalog():
     catalog = get_doc_catalog()
     assert catalog['targets']
     assert catalog['presets']
-    assert 'csv_xlsx' in {p['id'] for p in catalog['presets']}
+    preset_ids = {p['id'] for p in catalog['presets']}
+    assert 'csv_xlsx' in preset_ids
+    if catalog['features'].get('markdown'):
+        assert 'md_html' in preset_ids
+
+
+def test_scan_documents_includes_markdown(tmp_path):
+    (tmp_path / 'readme.md').write_text('# Title', encoding='utf-8')
+    files = scan_documents(str(tmp_path))
+    assert len(files) == 1
+    assert files[0]['name'] == 'readme.md'
+
+
+def test_md_to_html(tmp_path):
+    if not get_doc_catalog()['features'].get('markdown'):
+        pytest.skip('markdown not installed')
+
+    src = tmp_path / 'doc.md'
+    dst = tmp_path / 'doc.html'
+    src.write_text('# Hello\n\n**bold** text', encoding='utf-8')
+
+    outputs, size = convert_document(str(src), str(dst), '.html')
+    assert size > 0
+    html = Path(outputs[0]).read_text(encoding='utf-8')
+    assert '<h1>' in html
+    assert '<strong>bold</strong>' in html
+
+
+def test_md_to_pdf(tmp_path):
+    catalog = get_doc_catalog()['features']
+    if not catalog.get('markdown') or not catalog.get('pymupdf'):
+        pytest.skip('markdown or pymupdf not installed')
+
+    src = tmp_path / 'doc.md'
+    dst = tmp_path / 'doc.pdf'
+    src.write_text('# Report\n\nParagraph one.', encoding='utf-8')
+
+    outputs, size = convert_document(str(src), str(dst), '.pdf')
+    assert size > 0
+    assert Path(outputs[0]).exists()
+
+
+def test_html_to_md(tmp_path):
+    if not get_doc_catalog()['features'].get('html2text'):
+        pytest.skip('html2text not installed')
+
+    src = tmp_path / 'page.html'
+    dst = tmp_path / 'page.md'
+    src.write_text('<html><body><h1>Title</h1><p>Hello</p></body></html>', encoding='utf-8')
+
+    outputs, size = convert_document(str(src), str(dst), '.md')
+    assert size > 0
+    text = Path(outputs[0]).read_text(encoding='utf-8')
+    assert 'Title' in text
+    assert 'Hello' in text
 
 
 def test_scan_documents(tmp_path):

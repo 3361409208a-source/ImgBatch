@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Play } from 'lucide-react';
 import { useAppStore } from '../store/appStore';
 import { OutputOptions } from '../components/OutputOptions';
+import { ToolPanel } from '../components/ToolPanel';
 
 function requireOut(replace: boolean, out: string): boolean {
   if (!replace && !out.trim()) {
@@ -21,7 +22,7 @@ export function TrimPage() {
   const [out, setOut] = useState('');
 
   return (
-    <div className="flex flex-col gap-4 p-4">
+    <ToolPanel>
       <label className="flex flex-col gap-1 text-sm w-48">
         <span className="text-muted-foreground">{t('padding')}</span>
         <input type="number" value={padding} onChange={(e) => setPadding(Number(e.target.value))} min="0"
@@ -41,6 +42,6 @@ export function TrimPage() {
         className="btn-cta w-fit">
         <Play size={16} />{t('start_trim')}
       </button>
-    </div>
+    </ToolPanel>
   );
 }

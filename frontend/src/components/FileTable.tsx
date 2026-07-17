@@ -16,7 +16,7 @@ export function FileTable() {
   };
 
   return (
-    <div className="flex-1 overflow-auto bg-surface border-r border-border min-w-0">
+    <div className="flex-1 min-h-0 overflow-auto bg-surface min-w-0">
       <table className="w-full text-[13px] border-collapse">
         <thead className="sticky top-0 z-10">
           <tr className="bg-[color:var(--color-surface-2)] border-b border-border text-left">

@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Play } from 'lucide-react';
 import { useAppStore } from '../store/appStore';
 import { OutputOptions } from '../components/OutputOptions';
+import { ToolPanel } from '../components/ToolPanel';
 import { api } from '../api/client';
 
 function requireOut(replace: boolean, out: string): boolean {
@@ -67,7 +68,7 @@ export function CompressPage() {
   };
 
   return (
-    <div className="flex flex-col gap-4 p-4 max-w-3xl">
+    <ToolPanel>
       <div className="flex items-end gap-8 flex-wrap">
         <label className="flex flex-col gap-1.5">
           <span className="label-muted">{t('quality')}</span>
@@ -116,6 +117,6 @@ export function CompressPage() {
         <Play size={14} strokeWidth={1.75} />
         {t('start_compress')}
       </button>
-    </div>
+    </ToolPanel>
   );
 }

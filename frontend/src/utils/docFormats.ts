@@ -17,6 +17,8 @@ export interface DocCatalog {
   features: {
     libreoffice: boolean;
     pymupdf: boolean;
+    markdown?: boolean;
+    html2text?: boolean;
   };
   inputs: string[];
 }
@@ -28,20 +30,24 @@ export const FALLBACK_DOC_CATALOG: DocCatalog = {
     { ext: '.pdf', label: 'PDF', group: 'common' },
     { ext: '.docx', label: 'DOCX', group: 'common' },
     { ext: '.xlsx', label: 'XLSX', group: 'common' },
+    { ext: '.html', label: 'HTML', group: 'common' },
     { ext: '.png', label: 'PNG', group: 'common' },
     { ext: '.jpg', label: 'JPG', group: 'common' },
     { ext: '.txt', label: 'TXT', group: 'other' },
-    { ext: '.html', label: 'HTML', group: 'other' },
+    { ext: '.md', label: 'MD', group: 'other' },
     { ext: '.csv', label: 'CSV', group: 'other' },
   ],
   presets: [
     { id: 'pdf_png', label: 'PDF→PNG', target_fmt: '.png', hint: 'PDF 每页导出为 PNG' },
     { id: 'pdf_txt', label: 'PDF→TXT', target_fmt: '.txt', hint: '提取 PDF 文本' },
+    { id: 'md_pdf', label: 'MD→PDF', target_fmt: '.pdf', hint: 'Markdown 渲染后导出 PDF' },
+    { id: 'md_html', label: 'MD→HTML', target_fmt: '.html', hint: 'Markdown 转为 HTML' },
+    { id: 'html_md', label: 'HTML→MD', target_fmt: '.md', hint: 'HTML 转为 Markdown' },
     { id: 'csv_xlsx', label: 'CSV→Excel', target_fmt: '.xlsx', hint: 'CSV 转 XLSX' },
     { id: 'txt_pdf', label: 'TXT→PDF', target_fmt: '.pdf', hint: '文本转 PDF' },
   ],
-  features: { libreoffice: false, pymupdf: true },
-  inputs: ['.pdf', '.docx', '.xlsx', '.txt', '.csv'],
+  features: { libreoffice: false, pymupdf: true, markdown: true, html2text: true },
+  inputs: ['.pdf', '.docx', '.xlsx', '.txt', '.md', '.html', '.csv'],
 };
 
 export const DOC_FILTER_FORMATS = [

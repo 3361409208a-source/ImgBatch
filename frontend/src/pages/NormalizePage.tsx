@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Play } from 'lucide-react';
 import { useAppStore } from '../store/appStore';
 import { OutputOptions } from '../components/OutputOptions';
+import { ToolPanel } from '../components/ToolPanel';
 
 function requireOut(replace: boolean, out: string): boolean {
   if (!replace && !out.trim()) {
@@ -23,7 +24,7 @@ export function NormalizePage() {
   const [out, setOut] = useState('');
 
   return (
-    <div className="flex flex-col gap-4 p-4">
+    <ToolPanel>
       <div className="flex items-center gap-6 flex-wrap">
         <label className="flex flex-col gap-1 text-sm">
           <span className="text-muted-foreground">{t('alpha_threshold')}</span>
@@ -58,6 +59,6 @@ export function NormalizePage() {
         className="btn-cta w-fit">
         <Play size={16} />{t('start_normalize')}
       </button>
-    </div>
+    </ToolPanel>
   );
 }

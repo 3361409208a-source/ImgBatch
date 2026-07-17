@@ -2,16 +2,26 @@ import { useTranslation } from 'react-i18next';
 import { Image } from 'lucide-react';
 import { useAppStore } from '../store/appStore';
 
-export function PreviewPanel() {
+interface PreviewPanelProps {
+  width?: number;
+}
+
+export function PreviewPanel({ width }: PreviewPanelProps) {
   const { t } = useTranslation();
   const { previewUrl, selectedFile } = useAppStore();
 
   return (
-    <aside className="w-60 flex flex-col bg-[color:var(--color-surface-2)] border-l border-border shrink-0">
-      <div className="px-3 py-2 border-b border-border flex items-center justify-between">
-        <span className="label-muted">{t('preview')}</span>
+    <aside
+      style={width != null ? { width } : undefined}
+      className="w-60 shrink-0 flex flex-col min-h-0 bg-[color:var(--color-surface-2)] border-l border-border"
+    >
+      <div className="px-3 py-2 border-b border-border flex items-center justify-between shrink-0 gap-2">
+        <span className="label-muted shrink-0">{t('preview')}</span>
         {selectedFile && (
-          <span className="text-[10px] font-mono text-[color:var(--color-muted-fg)] truncate max-w-[8rem]" title={selectedFile.name}>
+          <span
+            className="text-[10px] font-mono text-[color:var(--color-muted-fg)] truncate min-w-0"
+            title={selectedFile.name}
+          >
             {selectedFile.name}
           </span>
         )}
@@ -36,7 +46,7 @@ export function PreviewPanel() {
       </div>
       {selectedFile && (
         <div
-          className="px-3 py-2 border-t border-border text-[10px] font-mono text-[color:var(--color-muted-fg)] truncate leading-relaxed"
+          className="px-3 py-2 border-t border-border text-[10px] font-mono text-[color:var(--color-muted-fg)] truncate leading-relaxed shrink-0"
           title={selectedFile.path}
         >
           {selectedFile.path}

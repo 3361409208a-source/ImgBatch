@@ -117,7 +117,7 @@
   "tab_compress": "Compress",
   "tab_format": "Format",
   "tab_doc_convert": "Documents",
-  "doc_convert_hint": "Convert PDF, Office (Word/Excel/PPT), CSV, TXT, and more. Office→PDF requires LibreOffice; PDF→image/text uses built-in PyMuPDF.",
+  "doc_convert_hint": "Convert PDF, Office, Markdown, HTML, CSV, TXT, and more. MD→PDF/HTML uses built-in rendering; Office→PDF needs LibreOffice; PDF→image/text uses PyMuPDF.",
   "doc_common_presets": "Common document presets",
   "doc_target_format": "Target format:",
   "doc_pdf_pages": "PDF pages",

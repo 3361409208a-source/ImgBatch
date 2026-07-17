@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Play } from 'lucide-react';
 import { useAppStore } from '../store/appStore';
+import { ToolPanel } from '../components/ToolPanel';
 
 export function InspectPage() {
   const { t } = useTranslation();
@@ -17,7 +18,7 @@ export function InspectPage() {
   }, [lastTaskResult, lastTaskType, taskRunning]);
 
   return (
-    <div className="flex flex-col gap-4 p-4 max-w-3xl">
+    <ToolPanel>
       <p className="text-sm text-[color:var(--color-muted-fg)]">
         {t('start_inspect')}（仅 PNG）
       </p>
@@ -31,7 +32,7 @@ export function InspectPage() {
         {t('start_inspect')}
       </button>
       {results.length > 0 && (
-        <div className="overflow-auto border border-border rounded-md">
+        <div className="overflow-auto border border-border rounded-md max-h-96">
           <table className="w-full text-xs font-mono">
             <thead className="bg-muted text-[color:var(--color-muted-fg)]">
               <tr>
@@ -60,6 +61,6 @@ export function InspectPage() {
           </table>
         </div>
       )}
-    </div>
+    </ToolPanel>
   );
 }

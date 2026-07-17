@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Play, FolderOpen } from 'lucide-react';
 import { useAppStore } from '../store/appStore';
 import { OutputOptions } from '../components/OutputOptions';
+import { ToolPanel } from '../components/ToolPanel';
 
 const POSITIONS = ['top-left', 'top-right', 'center', 'bottom-left', 'bottom-right'];
 
@@ -64,7 +65,7 @@ export function WatermarkPage() {
   };
 
   return (
-    <div className="flex flex-col gap-4 p-4">
+    <ToolPanel>
       <div className="flex items-center gap-4 flex-wrap">
         <label className="flex items-center gap-2 text-sm cursor-pointer">
           <input type="radio" checked={wmType === 'text'} onChange={() => setWmType('text')} className="accent-primary cursor-pointer" />
@@ -177,6 +178,6 @@ export function WatermarkPage() {
         <Play size={16} />
         {t('start_watermark')}
       </button>
-    </div>
+    </ToolPanel>
   );
 }

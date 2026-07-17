@@ -41,7 +41,7 @@ const TABS: { key: TabKey; icon: LucideIcon }[] = [
   { key: 'gif', icon: Film },
 ];
 
-const TAB_I18N: Record<TabKey, string> = {
+export const TAB_I18N: Record<TabKey, string> = {
   compress: 'tab_compress',
   convert: 'tab_format',
   doc_convert: 'tab_doc_convert',
@@ -55,15 +55,19 @@ const TAB_I18N: Record<TabKey, string> = {
   gif: 'tab_gif',
 };
 
-interface TabLayoutProps {
+interface ToolSidebarProps {
   activeTab: TabKey;
   onTabChange: (tab: TabKey) => void;
+  width?: number;
 }
 
-export function TabLayout({ activeTab, onTabChange }: TabLayoutProps) {
+export function ToolSidebar({ activeTab, onTabChange, width }: ToolSidebarProps) {
   const { t } = useTranslation();
   return (
-    <nav className="flex items-center gap-0.5 px-3 py-1.5 bg-surface border-b border-border overflow-x-auto">
+    <nav
+      style={width != null ? { width } : undefined}
+      className="w-52 shrink-0 flex flex-col gap-0.5 p-2 bg-surface overflow-y-auto"
+    >
       {TABS.map(({ key, icon: Icon }) => {
         const active = activeTab === key;
         return (
@@ -71,7 +75,7 @@ export function TabLayout({ activeTab, onTabChange }: TabLayoutProps) {
             key={key}
             type="button"
             onClick={() => onTabChange(key)}
-            className={`flex items-center gap-1.5 h-8 px-2.5 text-[12px] font-medium whitespace-nowrap rounded-md
+            className={`flex items-center gap-2 w-full justify-start h-9 px-2.5 text-[13px] font-medium whitespace-nowrap rounded-md
               transition-colors duration-150 cursor-pointer outline-none
               focus-visible:ring-2 focus-visible:ring-ring/30 ${
               active
@@ -79,7 +83,7 @@ export function TabLayout({ activeTab, onTabChange }: TabLayoutProps) {
                 : 'text-[color:var(--color-muted-fg)] hover:bg-muted hover:text-foreground'
             }`}
           >
-            <Icon size={14} strokeWidth={1.5} />
+            <Icon size={15} strokeWidth={1.5} className="shrink-0" />
             {t(TAB_I18N[key])}
           </button>
         );

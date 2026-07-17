@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Play, Info } from 'lucide-react';
 import { useAppStore } from '../store/appStore';
 import { OutputOptions } from '../components/OutputOptions';
+import { ToolPanel } from '../components/ToolPanel';
 import { api } from '../api/client';
 
 type GifMode =
@@ -216,7 +217,7 @@ export function GifPage() {
     'px-2 py-1.5 border border-border rounded bg-background focus:border-primary outline-none';
 
   return (
-    <div className="flex flex-col gap-4 p-4 max-w-4xl">
+    <ToolPanel>
       <div className="flex items-start gap-4 flex-wrap">
         <label className="flex flex-col gap-1 text-sm min-w-[180px]">
           <span className="text-muted-foreground">{t('gif_mode')}</span>
@@ -415,6 +416,6 @@ export function GifPage() {
             : t('gif_gif_count', { n: gifFiles.length })}
         </span>
       </div>
-    </div>
+    </ToolPanel>
   );
 }

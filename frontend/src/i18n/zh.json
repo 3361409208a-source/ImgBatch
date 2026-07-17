@@ -117,7 +117,7 @@
   "tab_compress": "压缩",
   "tab_format": "格式转换",
   "tab_doc_convert": "文档转换",
-  "doc_convert_hint": "支持 PDF、Office（Word/Excel/PPT）、CSV、TXT 等互转。Office→PDF 需安装 LibreOffice；PDF→图片/文本使用内置 PyMuPDF。",
+  "doc_convert_hint": "支持 PDF、Office（Word/Excel/PPT）、Markdown、HTML、CSV、TXT 等互转。MD→PDF/HTML 内置渲染；Office→PDF 需 LibreOffice；PDF→图片/文本使用 PyMuPDF。",
   "doc_common_presets": "常用文档转换",
   "doc_target_format": "目标格式:",
   "doc_pdf_pages": "PDF 页面",

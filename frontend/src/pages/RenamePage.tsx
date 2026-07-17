@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Play, Eye } from 'lucide-react';
 import { useAppStore } from '../store/appStore';
 import { api } from '../api/client';
+import { ToolPanel } from '../components/ToolPanel';
 
 const MODES = ['prefix', 'suffix', 'replace', 'seq', 'case'];
 
@@ -40,7 +41,7 @@ export function RenamePage() {
   };
 
   return (
-    <div className="flex flex-col gap-4 p-4">
+    <ToolPanel>
       <div className="flex items-center gap-4">
         <label className="flex flex-col gap-1 text-sm">
           <span className="text-muted-foreground">{t('mode')}</span>
@@ -120,7 +121,7 @@ export function RenamePage() {
         </button>
       </div>
       {Object.keys(previewMap).length > 0 && (
-        <div className="max-h-48 overflow-auto border border-border rounded-md p-2 text-xs font-mono">
+        <div className="overflow-auto border border-border rounded-md p-2 text-xs font-mono max-h-64">
           {Object.entries(previewMap).slice(0, 50).map(([old, newN]) => (
             <div key={old} className="flex gap-2">
               <span className="text-destructive">{old}</span>
@@ -130,6 +131,6 @@ export function RenamePage() {
           ))}
         </div>
       )}
-    </div>
+    </ToolPanel>
   );
 }

@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Play } from 'lucide-react';
 import { useAppStore } from '../store/appStore';
 import { OutputOptions } from '../components/OutputOptions';
+import { ToolPanel } from '../components/ToolPanel';
 import { api } from '../api/client';
 import type { ConvertCatalog } from '../utils/convertFormats';
 import {
@@ -44,7 +45,7 @@ export function ConvertPage() {
   };
 
   return (
-    <div className="flex flex-col gap-4 p-4">
+    <ToolPanel>
       <div className="flex flex-col gap-2">
         <span className="text-sm text-muted-foreground">{t('convert_common_presets')}</span>
         <div className="flex flex-wrap gap-2">
@@ -141,6 +142,6 @@ export function ConvertPage() {
         <Play size={16} />
         {t('start_convert')}
       </button>
-    </div>
+    </ToolPanel>
   );
 }

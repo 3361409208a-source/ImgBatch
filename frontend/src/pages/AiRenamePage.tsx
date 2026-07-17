@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Sparkles, Check, ExternalLink, ClipboardPaste } from 'lucide-react';
 import { api } from '../api/client';
+import { ToolPanel } from '../components/ToolPanel';
 import { useAppStore } from '../store/appStore';
 import { buildExternalAiRenamePrompt } from '../utils/aiRenamePrompt';
 import { parseAiRenameLocally } from '../utils/parseAiRename';
@@ -102,7 +103,7 @@ export function AiRenamePage() {
   };
 
   return (
-    <div className="flex flex-col gap-4 p-4 max-w-3xl">
+    <ToolPanel>
       <p className="text-xs text-[color:var(--color-muted-fg)] leading-relaxed">
         {t('ai_rename_hint')}
       </p>
@@ -195,7 +196,7 @@ export function AiRenamePage() {
       </div>
 
       {Object.keys(results).length > 0 && (
-        <div className="max-h-48 overflow-auto border border-border rounded-md p-2 text-xs font-mono bg-[color:var(--color-surface-2)]">
+        <div className="overflow-auto border border-border rounded-md p-2 text-xs font-mono bg-[color:var(--color-surface-2)] max-h-64">
           <div className="text-[10px] text-[color:var(--color-muted-fg)] mb-1">{t('ai_preview')}</div>
           {Object.entries(results).map(([old, newN]) => (
             <div key={old} className="flex gap-2 py-0.5">
@@ -206,6 +207,6 @@ export function AiRenamePage() {
           ))}
         </div>
       )}
-    </div>
+    </ToolPanel>
   );
 }

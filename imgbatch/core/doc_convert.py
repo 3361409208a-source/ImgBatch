@@ -16,7 +16,7 @@ from .extensions import find_libreoffice, is_libreoffice_installed
 
 DOCUMENT_EXT: Set[str] = {
     '.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx',
-    '.odt', '.ods', '.odp', '.rtf', '.txt', '.md', '.html', '.htm', '.csv',
+    '.odt', '.ods', '.odp', '.rtf', '.txt', '.md', '.markdown', '.html', '.htm', '.csv',
 }
 
 OFFICE_INPUT_EXT: Set[str] = {
@@ -74,12 +74,45 @@ DOC_CONVERT_PRESETS = [
         'target_fmt': '.pdf',
         'hint': '纯文本转为 PDF',
     },
+    {
+        'id': 'md_pdf',
+        'label': 'MD→PDF',
+        'target_fmt': '.pdf',
+        'hint': 'Markdown 渲染后导出 PDF',
+    },
+    {
+        'id': 'md_html',
+        'label': 'MD→HTML',
+        'target_fmt': '.html',
+        'hint': 'Markdown 转为网页 HTML',
+    },
+    {
+        'id': 'md_docx',
+        'label': 'MD→Word',
+        'target_fmt': '.docx',
+        'hint': 'Markdown 转为 DOCX（需 LibreOffice）',
+    },
+    {
+        'id': 'html_md',
+        'label': 'HTML→MD',
+        'target_fmt': '.md',
+        'hint': 'HTML 转为 Markdown 文本',
+    },
+    {
+        'id': 'html_pdf',
+        'label': 'HTML→PDF',
+        'target_fmt': '.pdf',
+        'hint': '网页 HTML 导出 PDF',
+    },
 ]
 
 DOC_TARGET_GROUPS = {
-    'common': ['.pdf', '.docx', '.xlsx', '.pptx', '.png', '.jpg'],
-    'other': ['.txt', '.html', '.csv', '.odt', '.ods', '.odp'],
+    'common': ['.pdf', '.docx', '.xlsx', '.pptx', '.png', '.jpg', '.html'],
+    'other': ['.txt', '.md', '.htm', '.csv', '.odt', '.ods', '.odp'],
 }
+
+MARKDOWN_EXT: Set[str] = {'.md', '.markdown'}
+HTML_EXT: Set[str] = {'.html', '.htm'}
 
 
 def is_document(path: str) -> bool:
@@ -150,21 +183,37 @@ def _pick_engine(src_ext: str, target_ext: str) -> Optional[str]:
     target_ext = target_ext.lower()
     if src_ext == '.csv' and target_ext == '.xlsx':
         return 'openpyxl'
-    if src_ext in {'.txt', '.md'} and target_ext == '.pdf':
+    if src_ext == '.txt' and target_ext == '.pdf':
         return 'text_pdf'
+    if src_ext in MARKDOWN_EXT:
+        if target_ext == '.html' and _markdown_available():
+            return 'markdown_html'
+        if target_ext == '.pdf' and _markdown_available() and _pymupdf_available():
+            return 'markdown_pdf'
+        if target_ext == '.txt' and _markdown_available() and _html2text_available():
+            return 'markdown_txt'
+        if target_ext in LO_CONVERT_EXT and find_libreoffice() and _markdown_available():
+            return 'markdown_lo'
+    if src_ext in HTML_EXT:
+        if target_ext == '.md' and _html2text_available():
+            return 'html_markdown'
+        if target_ext == '.pdf' and _pymupdf_available():
+            return 'html_pdf'
+        if target_ext in LO_CONVERT_EXT and find_libreoffice():
+            return 'libreoffice'
+    if find_libreoffice():
+        if src_ext == '.pdf' and target_ext in {'.docx', '.xlsx', '.pptx', '.odt', '.html', '.htm'}:
+            return 'libreoffice'
+        if src_ext in OFFICE_INPUT_EXT | {'.html', '.htm', '.csv', '.txt'}:
+            if target_ext in LO_CONVERT_EXT:
+                return 'libreoffice'
+        if src_ext in OFFICE_INPUT_EXT and target_ext == '.pdf':
+            return 'libreoffice'
     if src_ext == '.pdf':
         if target_ext == '.txt':
             return 'pymupdf_text'
         if target_ext in RASTER_EXT:
             return 'pymupdf_raster'
-    if find_libreoffice():
-        if src_ext == '.pdf' and target_ext in {'.docx', '.xlsx', '.pptx', '.odt', '.html', '.htm'}:
-            return 'libreoffice'
-        if src_ext in OFFICE_INPUT_EXT | {'.html', '.htm', '.csv', '.txt', '.md'}:
-            if target_ext in LO_CONVERT_EXT:
-                return 'libreoffice'
-        if src_ext in OFFICE_INPUT_EXT and target_ext == '.pdf':
-            return 'libreoffice'
     if src_ext == '.pdf' and target_ext == '.pdf':
         return None
     return None
@@ -173,8 +222,10 @@ def _pick_engine(src_ext: str, target_ext: str) -> Optional[str]:
 def get_doc_catalog() -> dict:
     lo = is_libreoffice_installed()
     pymupdf = _pymupdf_available()
+    md = _markdown_available()
+    h2t = _html2text_available()
     targets = []
-    for ext in _all_target_exts(lo, pymupdf):
+    for ext in _all_target_exts(lo, pymupdf, md, h2t):
         group = 'common' if ext in DOC_TARGET_GROUPS.get('common', []) else 'other'
         targets.append({
             'ext': ext,
@@ -190,9 +241,17 @@ def get_doc_catalog() -> dict:
             continue
         if preset_id == 'pdf_docx' and not lo:
             continue
+        if preset_id == 'md_docx' and not lo:
+            continue
         if preset_id in {'pdf_jpg', 'pdf_png', 'pdf_txt'} and not pymupdf:
             continue
         if preset_id == 'txt_pdf' and not (lo or pymupdf):
+            continue
+        if preset_id in {'md_pdf', 'html_pdf'} and not pymupdf:
+            continue
+        if preset_id == 'md_html' and not md:
+            continue
+        if preset_id == 'html_md' and not h2t:
             continue
         if target in RASTER_EXT and not pymupdf:
             continue
@@ -204,17 +263,23 @@ def get_doc_catalog() -> dict:
         'features': {
             'libreoffice': lo,
             'pymupdf': pymupdf,
+            'markdown': md,
+            'html2text': h2t,
         },
         'inputs': sorted(DOCUMENT_EXT),
     }
 
 
-def _all_target_exts(lo: bool, pymupdf: bool) -> List[str]:
+def _all_target_exts(lo: bool, pymupdf: bool, md: bool, h2t: bool) -> List[str]:
     exts: Set[str] = set()
     if lo:
         exts |= LO_CONVERT_EXT
     if pymupdf:
         exts |= RASTER_EXT | {'.txt', '.pdf'}
+    if md:
+        exts.add('.html')
+    if h2t:
+        exts.add('.md')
     exts.add('.xlsx')  # csv via openpyxl
     ordered = list(DOC_TARGET_GROUPS['common']) + list(DOC_TARGET_GROUPS['other'])
     return [e for e in ordered if e in exts] + sorted(exts - set(ordered))
@@ -226,6 +291,118 @@ def _pymupdf_available() -> bool:
         return True
     except ImportError:
         return False
+
+
+def _markdown_available() -> bool:
+    try:
+        import markdown  # noqa: F401
+        return True
+    except ImportError:
+        return False
+
+
+def _html2text_available() -> bool:
+    try:
+        import html2text  # noqa: F401
+        return True
+    except ImportError:
+        return False
+
+
+_MD_HTML_CSS = """
+body { font-family: "Segoe UI", "Microsoft YaHei", sans-serif; line-height: 1.6; color: #222; }
+h1, h2, h3 { margin-top: 1.2em; margin-bottom: 0.5em; }
+code { background: #f4f4f4; padding: 0.15em 0.35em; border-radius: 3px; font-size: 0.92em; }
+pre { background: #f4f4f4; padding: 0.8em 1em; overflow: auto; border-radius: 4px; }
+pre code { background: none; padding: 0; }
+table { border-collapse: collapse; margin: 1em 0; }
+th, td { border: 1px solid #ccc; padding: 0.35em 0.6em; }
+blockquote { border-left: 3px solid #ccc; margin-left: 0; padding-left: 1em; color: #555; }
+img { max-width: 100%; }
+"""
+
+
+def _markdown_to_html_content(src: str) -> str:
+    import markdown as md_lib
+
+    text = Path(src).read_text(encoding='utf-8', errors='replace')
+    body = md_lib.markdown(
+        text,
+        extensions=['tables', 'fenced_code', 'nl2br', 'sane_lists'],
+    )
+    return (
+        '<!DOCTYPE html><html><head><meta charset="utf-8">'
+        f'<style>{_MD_HTML_CSS}</style></head><body>{body}</body></html>'
+    )
+
+
+def _convert_markdown_html(src: str, dst: str) -> str:
+    Path(dst).write_text(_markdown_to_html_content(src), encoding='utf-8')
+    return dst
+
+
+def _convert_html_pdf_content(html: str, dst: str) -> str:
+    import fitz
+
+    if '<html' not in html.lower():
+        html = f'<!DOCTYPE html><html><body>{html}</body></html>'
+
+    story = fitz.Story(html=html, user_css=_MD_HTML_CSS)
+    writer = fitz.DocumentWriter(dst)
+    mediabox = fitz.paper_rect('a4')
+    margin = 50
+    where = mediabox + (margin, margin, -margin, -margin)
+    try:
+        while True:
+            device = writer.begin_page(mediabox)
+            more, _filled = story.place(where)
+            story.draw(device)
+            writer.end_page()
+            if not more:
+                break
+    finally:
+        writer.close()
+    return dst
+
+
+def _convert_markdown_pdf(src: str, dst: str) -> str:
+    return _convert_html_pdf_content(_markdown_to_html_content(src), dst)
+
+
+def _convert_markdown_txt(src: str, dst: str) -> str:
+    import html2text
+
+    html = _markdown_to_html_content(src)
+    text = html2text.html2text(html, bodywidth=0)
+    Path(dst).write_text(text.strip() + '\n', encoding='utf-8')
+    return dst
+
+
+def _convert_html_markdown(src: str, dst: str) -> str:
+    import html2text
+
+    html = Path(src).read_text(encoding='utf-8', errors='replace')
+    text = html2text.html2text(html, bodywidth=0)
+    Path(dst).write_text(text.strip() + '\n', encoding='utf-8')
+    return dst
+
+
+def _convert_html_pdf(src: str, dst: str) -> str:
+    html = Path(src).read_text(encoding='utf-8', errors='replace')
+    return _convert_html_pdf_content(html, dst)
+
+
+def _convert_markdown_lo(src: str, dst: str, target_ext: str) -> List[str]:
+    with tempfile.NamedTemporaryFile('w', encoding='utf-8', suffix='.html', delete=False) as tmp:
+        tmp.write(_markdown_to_html_content(src))
+        tmp_path = tmp.name
+    try:
+        return _convert_libreoffice(tmp_path, dst, target_ext)
+    finally:
+        try:
+            os.remove(tmp_path)
+        except OSError:
+            pass
 
 
 def _lo_format(ext: str) -> str:
@@ -305,6 +482,8 @@ def _convert_text_pdf(src: str, dst: str) -> str:
             tmp_path = tmp.name
         try:
             return _convert_libreoffice(tmp_path, dst, '.pdf')[0]
+        except RuntimeError:
+            pass
         finally:
             try:
                 os.remove(tmp_path)
@@ -391,6 +570,20 @@ def convert_document(
         out = _convert_csv_xlsx(src, dst)
     elif engine == 'text_pdf':
         out = _convert_text_pdf(src, dst)
+    elif engine == 'markdown_html':
+        out = _convert_markdown_html(src, dst)
+    elif engine == 'markdown_pdf':
+        out = _convert_markdown_pdf(src, dst)
+    elif engine == 'markdown_txt':
+        out = _convert_markdown_txt(src, dst)
+    elif engine == 'markdown_lo':
+        outputs = _convert_markdown_lo(src, dst, target_ext)
+        total = sum(os.path.getsize(p) for p in outputs)
+        return outputs, total
+    elif engine == 'html_markdown':
+        out = _convert_html_markdown(src, dst)
+    elif engine == 'html_pdf':
+        out = _convert_html_pdf(src, dst)
     elif engine == 'pymupdf_text':
         out = _convert_pdf_text(src, dst)
     elif engine == 'pymupdf_raster':

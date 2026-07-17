@@ -12,6 +12,7 @@ Features:
 
 import ast
 import json
+import os
 import re
 import time
 import urllib.error
@@ -319,7 +320,6 @@ def apply_ai_rename(
     if not clean_mapping:
         return {'renamed': 0, 'errors': [], 'cancelled': False}
 
-    import os  # needed for the rename module
     result = run_rename_batch(
         state, folder, clean_mapping,
         conflict_resolution=ConflictResolution.AUTO_NUMBER,
