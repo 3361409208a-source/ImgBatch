@@ -21,13 +21,13 @@ npm run preview
 
 ## 部署到 Vercel
 
-1. 将 `feat/website` 分支推送到 GitHub
-2. 在 [Vercel](https://vercel.com) 导入仓库
-3. 项目设置中指定 **Root Directory** 为 `website`
-4. Framework Preset 选择 **Vite**（或留空，由 `vercel.json` 自动识别）
-5. Build Command: `npm run build`
-6. Output Directory: `dist`
-7. 点击 Deploy
+Vercel 生产环境通常**固定部署 `main` 分支**（无法在部分套餐下改分支）。官网代码已合并进 `main`，推送 `main` 即可触发部署。
+
+1. 在 [Vercel](https://vercel.com) 导入仓库（或已有项目等待自动部署）
+2. 项目设置中指定 **Root Directory** 为 `website`
+3. Framework Preset 选择 **Vite**（或留空，由 `vercel.json` 自动识别）
+4. Production Branch 保持 **main**（默认）
+5. Build Command: `npm run build` · Output Directory: `dist`
 
 ### 环境变量
 
