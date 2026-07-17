@@ -57,6 +57,7 @@ def _dispatch_convert(state, folder, file_list, params, on_progress=None):
         do_backup=do_backup,
         replace=params.get("replace", True),
         out=params.get("out"),
+        quality=params.get("quality", 85),
         on_progress=on_progress,
         backup_fn=backup_fn,
     )
@@ -210,9 +211,28 @@ def _dispatch_gif_edit(state, folder, file_list, params, on_progress=None):
     )
 
 
+def _dispatch_doc_convert(state, folder, file_list, params, on_progress=None):
+    from imgbatch.core.doc_convert import run_doc_convert_batch
+    do_backup = params.get("do_backup", False)
+    backup_fn = _backup_fn if do_backup else None
+    return run_doc_convert_batch(
+        state, folder, file_list,
+        target_fmt=params.get("target_fmt", ".pdf"),
+        do_backup=do_backup,
+        replace=params.get("replace", True),
+        out=params.get("out"),
+        dpi=params.get("dpi", 150),
+        page_mode=params.get("page_mode", "all"),
+        quality=params.get("quality", 85),
+        on_progress=on_progress,
+        backup_fn=backup_fn,
+    )
+
+
 DISPATCHERS = {
     "compress": _dispatch_compress,
     "convert": _dispatch_convert,
+    "doc_convert": _dispatch_doc_convert,
     "rename": _dispatch_rename,
     "watermark": _dispatch_watermark,
     "ai_rename": _dispatch_ai_rename,

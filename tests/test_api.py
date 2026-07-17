@@ -28,6 +28,49 @@ def test_health(client):
     assert resp.json()["ok"] is True
 
 
+def test_convert_formats(client):
+    resp = client.get("/convert/formats")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["targets"]
+    assert data["presets"]
+    assert "heic_input" in data["features"]
+
+
+def test_doc_formats(client):
+    resp = client.get("/doc/formats")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["targets"]
+    assert data["presets"]
+    assert "libreoffice" in data["features"]
+    assert ".pdf" in data["inputs"]
+
+
+def test_scan_documents(client, tmp_path):
+    (tmp_path / "readme.txt").write_text("hello", encoding="utf-8")
+    (tmp_path / "photo.png").write_bytes(b"\x89PNG\r\n")
+    resp = client.post("/scan", json={
+        "folder": str(tmp_path),
+        "recursive": False,
+        "kind": "document",
+    })
+    assert resp.status_code == 200
+    names = {f["name"] for f in resp.json()["files"]}
+    assert names == {"readme.txt"}
+
+
+def test_extensions(client):
+    resp = client.get("/extensions")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["total_count"] >= 1
+    assert "extensions" in data
+    lo = next(x for x in data["extensions"] if x["id"] == "libreoffice")
+    assert lo["download_url"]
+    assert lo["unlocks"]
+
+
 # ── Scan ──────────────────────────────────────────────────────────────────
 
 def test_scan_empty_folder(client, tmp_path):

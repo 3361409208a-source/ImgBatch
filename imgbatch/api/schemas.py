@@ -26,6 +26,7 @@ class FileInfo(BaseModel):
 class ScanRequest(BaseModel):
     folder: str
     recursive: bool = False
+    kind: Literal["image", "document", "all"] = "image"
 
 
 class ScanResponse(BaseModel):
@@ -34,6 +35,7 @@ class ScanResponse(BaseModel):
 
 class ProbeRequest(BaseModel):
     paths: List[str]
+    kind: Literal["image", "document", "all"] = "image"
 
 
 # ── Filter ───────────────────────────────────────────────────────────────
@@ -99,7 +101,7 @@ class AiRenameParseResponse(BaseModel):
 # ── Task creation ─────────────────────────────────────────────────────────
 
 TaskType = Literal[
-    "compress", "convert", "rename", "watermark",
+    "compress", "convert", "doc_convert", "rename", "watermark",
     "ai_rename", "ai_apply", "trim", "inspect",
     "normalize", "spritesheet", "gif_edit",
 ]
@@ -165,6 +167,87 @@ class GifInfoItem(BaseModel):
 
 class GifInfoResponse(BaseModel):
     items: List[GifInfoItem]
+
+
+# ── Convert catalog ───────────────────────────────────────────────────────
+
+class ConvertTarget(BaseModel):
+    ext: str
+    label: str
+    group: str
+    supports_quality: bool
+
+
+class ConvertPreset(BaseModel):
+    id: str
+    label: str
+    target_fmt: str
+    quality: Optional[int] = None
+    hint: str = ""
+
+
+class ConvertCatalogResponse(BaseModel):
+    targets: List[ConvertTarget]
+    presets: List[ConvertPreset]
+    features: Dict[str, bool]
+
+
+class DocTarget(BaseModel):
+    ext: str
+    label: str
+    group: str
+
+
+class DocPreset(BaseModel):
+    id: str
+    label: str
+    target_fmt: str
+    hint: str = ""
+
+
+class DocCatalogResponse(BaseModel):
+    targets: List[DocTarget]
+    presets: List[DocPreset]
+    features: Dict[str, bool]
+    inputs: List[str]
+
+
+# ── Extension packs ───────────────────────────────────────────────────────
+
+class ExtensionItem(BaseModel):
+    id: str
+    name: str
+    name_en: str
+    description: str
+    description_en: str
+    download_url: str
+    install_dir: str = ""
+    size_hint: str
+    size_hint_en: str
+    installed: bool
+    install_path: Optional[str] = None
+    unlocks: List[str]
+    unlocks_en: List[str]
+
+
+class ExtensionCatalogResponse(BaseModel):
+    extensions: List[ExtensionItem]
+    locked_count: int
+    unlocked_count: int
+    total_count: int
+    install: Optional[Dict[str, Any]] = None
+
+
+class ExtensionInstallStatus(BaseModel):
+    running: bool
+    progress: float = 0
+    message: str = ""
+    error: Optional[str] = None
+    install_path: Optional[str] = None
+
+
+class ExtensionPathRequest(BaseModel):
+    path: str
 
 
 # ── Backups ───────────────────────────────────────────────────────────────

@@ -10,11 +10,16 @@ from pathlib import Path
 
 from PIL import Image, UnidentifiedImageError
 
-SUPPORTED_EXT = {'.jpg', '.jpeg', '.png', '.webp', '.bmp', '.tiff', '.tif', '.gif', '.ico'}
-QUALITY_FORMATS = {'.jpg', '.jpeg', '.webp'}
+_BASE_SUPPORTED_EXT = {
+    '.jpg', '.jpeg', '.png', '.webp', '.bmp', '.tiff', '.tif', '.gif', '.ico',
+}
+_HEIF_INPUT_EXT = {'.heic', '.heif'}
+_BASE_CONVERT_TARGETS = [
+    '.jpg', '.jpeg', '.png', '.webp', '.bmp', '.tiff', '.gif', '.ico',
+]
+QUALITY_FORMATS = {'.jpg', '.jpeg', '.webp', '.avif'}
 # Formats that do not store an alpha channel — flatten onto white when needed.
 NO_ALPHA_EXT = {'.jpg', '.jpeg', '.bmp'}
-CONVERT_TARGETS = ['.jpg', '.jpeg', '.png', '.webp', '.bmp', '.tiff', '.gif', '.ico']
 
 SAVE_FORMAT_MAP = {
     '.jpg': 'JPEG',
@@ -26,7 +31,116 @@ SAVE_FORMAT_MAP = {
     '.tif': 'TIFF',
     '.gif': 'GIF',
     '.ico': 'ICO',
+    '.avif': 'AVIF',
 }
+
+COMMON_CONVERT_PRESETS = [
+    {
+        'id': 'web_jpg',
+        'label': '网页 JPG',
+        'target_fmt': '.jpg',
+        'quality': 85,
+        'hint': '通用网页与分享，体积适中',
+    },
+    {
+        'id': 'web_webp',
+        'label': 'WebP 体积小',
+        'target_fmt': '.webp',
+        'quality': 82,
+        'hint': '现代浏览器，比 JPG 更小',
+    },
+    {
+        'id': 'png_transparent',
+        'label': 'PNG 透明',
+        'target_fmt': '.png',
+        'quality': None,
+        'hint': '保留透明通道，无损',
+    },
+    {
+        'id': 'avif_modern',
+        'label': 'AVIF 现代',
+        'target_fmt': '.avif',
+        'quality': 75,
+        'hint': '新一代高压缩格式',
+    },
+    {
+        'id': 'print_tiff',
+        'label': 'TIFF 打印',
+        'target_fmt': '.tiff',
+        'quality': None,
+        'hint': '印刷与归档',
+    },
+    {
+        'id': 'icon_ico',
+        'label': '图标 ICO',
+        'target_fmt': '.ico',
+        'quality': None,
+        'hint': 'Windows 图标',
+    },
+]
+
+CONVERT_TARGET_GROUPS = {
+    'common': ['.jpg', '.png', '.webp', '.avif'],
+    'other': ['.jpeg', '.bmp', '.tiff', '.gif', '.ico'],
+}
+
+
+def _register_heif_opener() -> bool:
+    try:
+        from pillow_heif import register_heif_opener
+        register_heif_opener()
+        return True
+    except ImportError:
+        return False
+
+
+def _avif_encode_supported() -> bool:
+    try:
+        from PIL import features
+        return bool(features.check('avif'))
+    except Exception:
+        return False
+
+
+HEIF_AVAILABLE = _register_heif_opener()
+AVIF_AVAILABLE = _avif_encode_supported()
+
+SUPPORTED_EXT = set(_BASE_SUPPORTED_EXT)
+if HEIF_AVAILABLE:
+    SUPPORTED_EXT |= _HEIF_INPUT_EXT
+
+CONVERT_TARGETS = list(_BASE_CONVERT_TARGETS)
+if AVIF_AVAILABLE and '.avif' not in CONVERT_TARGETS:
+    CONVERT_TARGETS.insert(3, '.avif')
+
+
+def get_convert_catalog() -> dict:
+    """Return supported convert targets, presets, and capability flags."""
+    targets = []
+    for ext in CONVERT_TARGETS:
+        group = 'common' if ext in CONVERT_TARGET_GROUPS.get('common', []) else 'other'
+        targets.append({
+            'ext': ext,
+            'label': ext.lstrip('.').upper(),
+            'group': group,
+            'supports_quality': ext in QUALITY_FORMATS,
+        })
+
+    presets = []
+    for preset in COMMON_CONVERT_PRESETS:
+        target = preset['target_fmt']
+        if target == '.avif' and not AVIF_AVAILABLE:
+            continue
+        presets.append(dict(preset))
+
+    return {
+        'targets': targets,
+        'presets': presets,
+        'features': {
+            'heic_input': HEIF_AVAILABLE,
+            'avif_output': AVIF_AVAILABLE,
+        },
+    }
 
 
 def is_supported(path: str) -> bool:
@@ -138,7 +252,7 @@ SIZE_PRESETS = {
     'custom': (None, None),  # bounds come from custom min/max fields
 }
 
-FILTER_FORMATS = ('ALL', 'PNG', 'JPEG', 'WEBP', 'BMP', 'TIFF', 'GIF', 'ICO')
+FILTER_FORMATS = ('ALL', 'PNG', 'JPEG', 'WEBP', 'BMP', 'TIFF', 'GIF', 'ICO', 'AVIF', 'HEIC')
 
 
 def parse_dimensions(dim_str: str) -> Tuple[Optional[int], Optional[int]]:
@@ -158,6 +272,8 @@ def _normalize_format(fmt: str) -> str:
         return 'JPEG'
     if f in ('TIF', 'TIFF'):
         return 'TIFF'
+    if f in ('HEIC', 'HEIF'):
+        return 'HEIC'
     return f
 
 

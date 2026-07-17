@@ -15,6 +15,8 @@ hidden += [
     'uvicorn.protocols', 'uvicorn.protocols.http', 'uvicorn.protocols.http.auto',
     'uvicorn.lifespan', 'uvicorn.lifespan.on',
     'fastapi', 'sse_starlette', 'pydantic',
+    'pillow_heif', 'pillow_heif.register_heif_opener',
+    'fitz', 'openpyxl',
 ]
 excludes = ['tkinter', 'matplotlib', 'numpy', 'pandas', 'scipy']
 

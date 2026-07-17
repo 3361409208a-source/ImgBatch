@@ -1,15 +1,17 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Play } from 'lucide-react';
 import { useAppStore } from '../store/appStore';
 import { OutputOptions } from '../components/OutputOptions';
+import { ExtensionPackPanel } from '../components/ExtensionPackPanel';
 import { api } from '../api/client';
-import type { ConvertCatalog } from '../utils/convertFormats';
+import type { DocCatalog } from '../utils/docFormats';
 import {
-  FALLBACK_CONVERT_CATALOG,
-  groupTargets,
-  targetSupportsQuality,
-} from '../utils/convertFormats';
+  FALLBACK_DOC_CATALOG,
+  groupDocTargets,
+  isPdfTarget,
+  isRasterDocTarget,
+} from '../utils/docFormats';
 
 function requireOut(replace: boolean, out: string): boolean {
   if (!replace && !out.trim()) {
@@ -19,34 +21,42 @@ function requireOut(replace: boolean, out: string): boolean {
   return true;
 }
 
-export function ConvertPage() {
+export function DocConvertPage() {
   const { t } = useTranslation();
   const { startTask } = useAppStore();
-  const [catalog, setCatalog] = useState<ConvertCatalog>(FALLBACK_CONVERT_CATALOG);
-  const [targetFmt, setTargetFmt] = useState('.png');
+  const [catalog, setCatalog] = useState<DocCatalog>(FALLBACK_DOC_CATALOG);
+  const [targetFmt, setTargetFmt] = useState('.pdf');
+  const [dpi, setDpi] = useState(150);
+  const [pageMode, setPageMode] = useState<'all' | 'first'>('all');
   const [quality, setQuality] = useState(85);
   const [replace, setReplace] = useState(true);
   const [doBackup, setDoBackup] = useState(true);
   const [out, setOut] = useState('');
 
-  useEffect(() => {
-    void api.convertFormats().then(setCatalog).catch(() => {
-      setCatalog(FALLBACK_CONVERT_CATALOG);
-    });
+  const reloadCatalog = useCallback(() => {
+    void api.docFormats().then(setCatalog).catch(() => setCatalog(FALLBACK_DOC_CATALOG));
   }, []);
 
-  const { common, other } = groupTargets(catalog);
-  const showQuality = targetSupportsQuality(catalog, targetFmt);
+  useEffect(() => {
+    reloadCatalog();
+  }, [reloadCatalog]);
 
-  const applyPreset = (preset: ConvertCatalog['presets'][number]) => {
+  const { common, other } = groupDocTargets(catalog);
+  const showPdfOptions = isRasterDocTarget(targetFmt);
+  const showQuality = targetFmt.toLowerCase() === '.jpg' || targetFmt.toLowerCase() === '.jpeg';
+
+  const applyPreset = (preset: DocCatalog['presets'][number]) => {
     setTargetFmt(preset.target_fmt);
-    if (preset.quality != null) setQuality(preset.quality);
   };
 
   return (
     <div className="flex flex-col gap-4 p-4">
+      <ExtensionPackPanel onUnlocked={reloadCatalog} />
+
+      <p className="text-xs text-muted-foreground max-w-2xl">{t('doc_convert_hint')}</p>
+
       <div className="flex flex-col gap-2">
-        <span className="text-sm text-muted-foreground">{t('convert_common_presets')}</span>
+        <span className="text-sm text-muted-foreground">{t('doc_common_presets')}</span>
         <div className="flex flex-wrap gap-2">
           {catalog.presets.map((preset) => (
             <button
@@ -68,7 +78,7 @@ export function ConvertPage() {
 
       <div className="flex flex-wrap items-end gap-4">
         <label className="flex flex-col gap-1 text-sm w-48">
-          <span className="text-muted-foreground">{t('to_format')}</span>
+          <span className="text-muted-foreground">{t('doc_target_format')}</span>
           <select
             value={targetFmt}
             onChange={(e) => setTargetFmt(e.target.value)}
@@ -91,8 +101,35 @@ export function ConvertPage() {
           </select>
         </label>
 
+        {showPdfOptions && (
+          <>
+            <label className="flex flex-col gap-1 text-sm w-40">
+              <span className="text-muted-foreground">{t('doc_pdf_pages')}</span>
+              <select
+                value={pageMode}
+                onChange={(e) => setPageMode(e.target.value as 'all' | 'first')}
+                className="px-2 py-1.5 border border-border rounded bg-background cursor-pointer"
+              >
+                <option value="all">{t('doc_pdf_pages_all')}</option>
+                <option value="first">{t('doc_pdf_pages_first')}</option>
+              </select>
+            </label>
+            <label className="flex flex-col gap-1 text-sm w-48">
+              <span className="text-muted-foreground">{t('doc_pdf_dpi')} {dpi}</span>
+              <input
+                type="range"
+                min={72}
+                max={300}
+                value={dpi}
+                onChange={(e) => setDpi(Number(e.target.value))}
+                className="cursor-pointer"
+              />
+            </label>
+          </>
+        )}
+
         {showQuality && (
-          <label className="flex flex-col gap-1 text-sm w-56">
+          <label className="flex flex-col gap-1 text-sm w-48">
             <span className="text-muted-foreground">{t('quality')} {quality}</span>
             <input
               type="range"
@@ -106,12 +143,11 @@ export function ConvertPage() {
         )}
       </div>
 
-      {(catalog.features.heic_input || catalog.features.avif_output) && (
-        <p className="text-xs text-muted-foreground">
-          {catalog.features.heic_input && t('convert_heic_hint')}
-          {catalog.features.heic_input && catalog.features.avif_output && ' · '}
-          {catalog.features.avif_output && t('convert_avif_hint')}
-        </p>
+      {!catalog.features.pymupdf && (
+        <p className="text-xs text-muted-foreground">{t('doc_pymupdf_missing')}</p>
+      )}
+      {isPdfTarget(targetFmt) && catalog.features.libreoffice && (
+        <p className="text-xs text-muted-foreground">{t('doc_office_to_pdf_hint')}</p>
       )}
 
       <OutputOptions
@@ -128,8 +164,10 @@ export function ConvertPage() {
       <button
         onClick={() => {
           if (!requireOut(replace, out)) return;
-          void startTask('convert', {
+          void startTask('doc_convert', {
             target_fmt: targetFmt,
+            dpi,
+            page_mode: pageMode,
             quality: showQuality ? quality : undefined,
             do_backup: doBackup,
             replace,
@@ -139,7 +177,7 @@ export function ConvertPage() {
         className="btn-cta w-fit"
       >
         <Play size={16} />
-        {t('start_convert')}
+        {t('start_doc_convert')}
       </button>
     </div>
   );

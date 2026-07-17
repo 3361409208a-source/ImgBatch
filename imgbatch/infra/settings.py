@@ -86,6 +86,8 @@ DEFAULT_CONFIG: Dict[str, Any] = {
     "spritesheet_output": "",
     # Recursive scan
     "recursive_scan": False,
+    # Extension packs (optional, user-installed)
+    "libreoffice_path": "",
 }
 
 

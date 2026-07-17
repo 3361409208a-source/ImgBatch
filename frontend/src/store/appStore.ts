@@ -29,9 +29,11 @@ interface AppStore {
 
   config: AppConfig;
   language: 'zh' | 'en';
+  scanKind: 'image' | 'document' | 'all';
 
   setFolder: (f: string) => void;
   setRecursive: (r: boolean) => void;
+  setScanKind: (kind: 'image' | 'document' | 'all') => void;
   refreshFiles: () => Promise<void>;
   applyFilter: () => Promise<void>;
   selectFile: (f: FileInfo | null) => void;
@@ -73,6 +75,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
 
   config: {} as AppConfig,
   language: 'zh',
+  scanKind: 'image',
 
   setFolder: (f) => {
     set({ folder: f });
@@ -81,21 +84,25 @@ export const useAppStore = create<AppStore>((set, get) => ({
     }
   },
   setRecursive: (r) => set({ recursive: r }),
+  setScanKind: (kind) => set({ scanKind: kind, filterFormat: 'ALL' }),
 
   refreshFiles: async () => {
-    const { folder, recursive } = get();
+    const { folder, recursive, scanKind } = get();
     if (!folder) return;
     try {
       set({ taskError: '', statusMessage: '正在扫描…' });
-      const res = await api.scan(folder, recursive);
+      const res = await api.scan(folder, recursive, scanKind);
       set({ allFiles: res.files, filteredFiles: res.files, taskError: '' });
       await get().applyFilter();
       await get().refreshUndoStatus();
+      const emptyMsg = scanKind === 'document'
+        ? '该文件夹下没有文档（可勾选「包含子目录」）'
+        : '该文件夹下没有图片（可勾选「包含子目录」）';
       set({
         statusMessage:
           res.files.length > 0
             ? `已加载 ${res.files.length} 个文件`
-            : '该文件夹下没有图片（可勾选「包含子目录」）',
+            : emptyMsg,
       });
     } catch (e) {
       const msg = String(e);

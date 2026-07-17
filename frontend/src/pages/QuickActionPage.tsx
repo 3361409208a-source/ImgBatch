@@ -3,18 +3,14 @@ import { Play, X, FolderOpen, Trash2 } from 'lucide-react';
 import { api } from '../api/client';
 import { subscribeTask } from '../api/sse';
 import type { FileInfo } from '../api/types';
+import {
+  FALLBACK_CONVERT_CATALOG,
+  IMAGE_INPUT_EXT,
+  targetSupportsQuality,
+  type ConvertCatalog,
+} from '../utils/convertFormats';
 
-const IMAGE_EXT = new Set([
-  '.png',
-  '.jpg',
-  '.jpeg',
-  '.webp',
-  '.gif',
-  '.bmp',
-  '.tif',
-  '.tiff',
-  '.ico',
-]);
+const IMAGE_EXT = IMAGE_INPUT_EXT;
 
 const ACTION_META: Record<
   string,
@@ -320,6 +316,7 @@ export function QuickActionPage() {
   const [doBackup, setDoBackup] = useState(true);
   const [out, setOut] = useState('');
   const [presetConvertFmt, setPresetConvertFmt] = useState<string | null>(null);
+  const [convertCatalog, setConvertCatalog] = useState<ConvertCatalog>(FALLBACK_CONVERT_CATALOG);
   const [gifMode, setGifMode] = useState('optimize');
   const [speedFactor, setSpeedFactor] = useState(2);
 
@@ -337,6 +334,7 @@ export function QuickActionPage() {
     void syncWindowChrome(act);
     if (payload.out) setOut(payload.out);
     if (payload.quality != null) setQuality(payload.quality);
+    else if (act === 'convert') setQuality(85);
     if (payload.resizePct != null) setResizePct(payload.resizePct);
     if (payload.padding != null) setPadding(payload.padding);
     if (payload.targetHeight != null) setTargetHeight(payload.targetHeight);
@@ -384,6 +382,10 @@ export function QuickActionPage() {
       setLoading(false);
       void revealQuickWindow();
     }
+  }, []);
+
+  useEffect(() => {
+    void api.convertFormats().then(setConvertCatalog).catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -455,7 +457,13 @@ export function QuickActionPage() {
           exif_mode: exifMode,
         };
       case 'convert':
-        return { target_fmt: targetFmt, do_backup: doBackup, replace, out: outVal };
+        return {
+          target_fmt: targetFmt,
+          quality: targetSupportsQuality(convertCatalog, targetFmt) ? quality : undefined,
+          do_backup: doBackup,
+          replace,
+          out: outVal,
+        };
       case 'rename':
         return {
           mode: renameMode,
@@ -736,14 +744,22 @@ export function QuickActionPage() {
               )}
 
               {action === 'convert' && (
-                <label className="flex flex-col gap-1">
-                  <span className="label-muted">目标格式</span>
-                  <select className="field" value={targetFmt} onChange={(e) => setTargetFmt(e.target.value)}>
-                    {['.png', '.jpg', '.jpeg', '.webp', '.bmp', '.gif', '.tiff'].map((f) => (
-                      <option key={f} value={f}>{f}</option>
-                    ))}
-                  </select>
-                </label>
+                <>
+                  <label className="flex flex-col gap-1">
+                    <span className="label-muted">目标格式</span>
+                    <select className="field" value={targetFmt} onChange={(e) => setTargetFmt(e.target.value)}>
+                      {convertCatalog.targets.map((f) => (
+                        <option key={f.ext} value={f.ext}>{f.ext}</option>
+                      ))}
+                    </select>
+                  </label>
+                  {targetSupportsQuality(convertCatalog, targetFmt) && (
+                    <label className="flex flex-col gap-1">
+                      <span className="label-muted">质量 {quality}</span>
+                      <input type="range" min={1} max={100} value={quality} onChange={(e) => setQuality(Number(e.target.value))} />
+                    </label>
+                  )}
+                </>
               )}
 
               {action === 'rename' && (

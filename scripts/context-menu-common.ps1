@@ -5,6 +5,7 @@ $script:ConvertFormats = @(
     @{ Id = "png"; Ext = ".png"; Label = "PNG" },
     @{ Id = "jpg"; Ext = ".jpg"; Label = "JPG" },
     @{ Id = "webp"; Ext = ".webp"; Label = "WEBP" },
+    @{ Id = "avif"; Ext = ".avif"; Label = "AVIF" },
     @{ Id = "bmp"; Ext = ".bmp"; Label = "BMP" },
     @{ Id = "tiff"; Ext = ".tiff"; Label = "TIFF" },
     @{ Id = "gif"; Ext = ".gif"; Label = "GIF" },
@@ -101,7 +102,7 @@ function Clear-ImgBatchContextMenu {
     )
     $classRoots = @(
         "*", "Directory", "Directory\Background",
-        ".png", ".jpg", ".jpeg", ".webp", ".gif", ".bmp", ".tif", ".tiff", ".ico",
+        ".png", ".jpg", ".jpeg", ".webp", ".gif", ".bmp", ".tif", ".tiff", ".ico", ".heic", ".heif", ".avif",
         "SystemFileAssociations\image"
     )
     foreach ($cr in $classRoots) {

@@ -6,7 +6,7 @@
 
 ### 全能图片批处理工具箱 · All-in-One Batch Image Toolkit
 
-压缩 · 格式转换 · 重命名 · 水印 · AI 重命名 · 裁剪透明 · 检查 · 规范化 · 精灵图 · GIF 编辑
+压缩 · 格式转换 · 文档转换 · 重命名 · 水印 · AI 重命名 · 裁剪透明 · 检查 · 规范化 · 精灵图 · GIF 编辑
 
 [![Tauri](https://img.shields.io/badge/Tauri-2-24C8DB?logo=tauri&logoColor=white)](https://tauri.app)
 [![React](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=black)](https://react.dev)
@@ -49,7 +49,8 @@
 | 模块 | 能力摘要 |
 |:---|:---|
 | **压缩** | 质量/缩放调节、EXIF 控制、大小预估、备份 |
-| **格式转换** | JPG / PNG / WEBP / BMP / TIFF / GIF / ICO |
+| **格式转换** | 常用预设 + JPG / PNG / WEBP / AVIF / BMP / TIFF / GIF / ICO；支持 HEIC 输入 |
+| **文档转换** | 内置 PDF/CSV 能力；**Office 扩展包**可一键从官方直链下载解压至 `%USERPROFILE%\.imgbatch\extensions\` |
 | **批量重命名** | 前缀后缀、查找替换、序号、大小写、冲突检测、预览 |
 | **水印** | 文字/图片水印，位置、透明度、缩放 |
 | **AI 重命名** | DeepSeek API 或秘塔 AI 助手 + JSON 粘贴解析 |

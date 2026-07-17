@@ -26,7 +26,13 @@ export const FEATURES = [
     icon: 'convert',
     title: '格式转换',
     titleEn: 'Convert',
-    desc: 'JPG、PNG、WEBP、BMP、TIFF、GIF、ICO 互转，智能处理透明度与动图。',
+    desc: '常用预设一键转换；JPG、PNG、WEBP、AVIF、HEIC 等互转，智能处理透明度与动图。',
+  },
+  {
+    icon: 'doc',
+    title: '文档转换',
+    titleEn: 'Documents',
+    desc: 'PDF、Word、Excel、PPT、CSV、TXT 互转；Office→PDF（LibreOffice），PDF→图片/文本（PyMuPDF）。',
   },
   {
     icon: 'rename',
@@ -136,7 +142,7 @@ export const STEPS = [
 ] as const;
 
 export const STATS = [
-  { value: '10', label: '核心模块' },
-  { value: '7+', label: '图片格式' },
+  { value: '11', label: '核心模块' },
+  { value: '10+', label: '图片格式' },
   { value: '100%', label: '本地处理' },
 ] as const;

@@ -8,8 +8,10 @@ import { FileTable } from './components/FileTable';
 import { PreviewPanel } from './components/PreviewPanel';
 import { TaskProgress } from './components/TaskProgress';
 import { TabLayout, type TabKey } from './components/TabLayout';
+import type { ScanKind } from './utils/docFormats';
 import { CompressPage } from './pages/CompressPage';
 import { ConvertPage } from './pages/ConvertPage';
+import { DocConvertPage } from './pages/DocConvertPage';
 import { RenamePage } from './pages/RenamePage';
 import { WatermarkPage } from './pages/WatermarkPage';
 import { AiRenamePage } from './pages/AiRenamePage';
@@ -25,19 +27,33 @@ export default function App() {
   const {
     language,
     loadConfig,
-    refreshFiles,
     canUndo,
     refreshUndoStatus,
     setStatusMessage,
     statusMessage,
+    folder,
+    refreshFiles,
+    setScanKind,
   } = useAppStore();
   const [activeTab, setActiveTab] = useState<TabKey>('compress');
+
+  const TAB_SCAN_KIND: Partial<Record<TabKey, ScanKind>> = {
+    doc_convert: 'document',
+  };
 
   useEffect(() => {
     void loadConfig().then(() => {
       void i18n.changeLanguage(language);
     });
   }, []);
+
+  useEffect(() => {
+    const kind: ScanKind = TAB_SCAN_KIND[activeTab] ?? 'image';
+    setScanKind(kind);
+    if (folder) {
+      void refreshFiles();
+    }
+  }, [activeTab]);
 
   useEffect(() => {
     void i18n.changeLanguage(language);
@@ -64,6 +80,8 @@ export default function App() {
         return <CompressPage />;
       case 'convert':
         return <ConvertPage />;
+      case 'doc_convert':
+        return <DocConvertPage />;
       case 'rename':
         return <RenamePage />;
       case 'watermark':

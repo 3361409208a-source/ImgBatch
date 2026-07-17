@@ -1,13 +1,15 @@
 import { useTranslation } from 'react-i18next';
 import { Search, RotateCcw } from 'lucide-react';
 import { useAppStore } from '../store/appStore';
+import { DOC_FILTER_FORMATS } from '../utils/docFormats';
 
-const FORMATS = ['ALL', 'PNG', 'JPEG', 'WEBP', 'BMP', 'TIFF', 'GIF', 'ICO'];
+const IMAGE_FORMATS = ['ALL', 'PNG', 'JPEG', 'WEBP', 'BMP', 'TIFF', 'GIF', 'ICO', 'AVIF', 'HEIC'];
 const SIZES = ['all', 'lt_50kb', 'lt_100kb', 'lt_500kb', 'lt_1mb', '100kb_1mb', 'gt_500kb', 'gt_1mb'];
 
 export function FilterBar() {
   const { t } = useTranslation();
   const s = useAppStore();
+  const formats = s.scanKind === 'document' ? DOC_FILTER_FORMATS : IMAGE_FORMATS;
 
   return (
     <div className="flex items-center gap-2 px-4 py-2 bg-[color:var(--color-surface-2)] border-b border-border">
@@ -27,7 +29,7 @@ export function FilterBar() {
         onChange={(e) => s.setFilter('filterFormat', e.target.value)}
         className="field-sm cursor-pointer"
       >
-        {FORMATS.map((f) => (
+        {formats.map((f) => (
           <option key={f} value={f}>
             {f === 'ALL' ? t('filter_size_all') : f}
           </option>

@@ -5,6 +5,7 @@ import {
   Crop,
   Download,
   FileImage,
+  FileText,
   Film,
   FolderOpen,
   Github,
@@ -25,6 +26,7 @@ import type { LucideIcon } from 'lucide-react';
 const iconMap: Record<string, LucideIcon> = {
   compress: Archive,
   convert: Image,
+  doc: FileText,
   rename: Type,
   watermark: Layers,
   ai: Bot,

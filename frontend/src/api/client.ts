@@ -1,6 +1,11 @@
 import type {
   AppConfig,
   CompressEstimateResponse,
+  ConvertCatalogResponse,
+  DocCatalogResponse,
+  ExtensionCatalogResponse,
+  ExtensionInstallResponse,
+  ExtensionInstallStatus,
   FileInfo,
   FilterRequest,
   PreviewResponse,
@@ -112,13 +117,25 @@ export const api = {
   getConfig: () => apiGet<AppConfig>('/config'),
   saveConfig: (config: Record<string, unknown>) =>
     apiPut<{ ok: boolean }>('/config', config),
-  scan: (folder: string, recursive: boolean) =>
-    apiPost<ScanResponse>('/scan', { folder, recursive }),
-  probe: (paths: string[]) => apiPost<ScanResponse>('/probe', { paths }),
+  scan: (folder: string, recursive: boolean, kind: 'image' | 'document' | 'all' = 'image') =>
+    apiPost<ScanResponse>('/scan', { folder, recursive, kind }),
+  probe: (paths: string[], kind: 'image' | 'document' | 'all' = 'image') =>
+    apiPost<ScanResponse>('/probe', { paths, kind }),
   filter: (req: FilterRequest) =>
     apiPost<{ files: FileInfo[] }>('/filter', req),
   compressEstimate: (files: FileInfo[], quality: number, resize_pct: number) =>
     apiPost<CompressEstimateResponse>('/compress/estimate', { files, quality, resize_pct }),
+  convertFormats: () => apiGet<ConvertCatalogResponse>('/convert/formats'),
+  docFormats: () => apiGet<DocCatalogResponse>('/doc/formats'),
+  listExtensions: () => apiGet<ExtensionCatalogResponse>('/extensions'),
+  extensionInstallStatus: () => apiGet<ExtensionInstallStatus>('/extensions/install-status'),
+  installExtension: (extId: string) =>
+    apiPost<ExtensionInstallResponse>(`/extensions/${extId}/install`, {}),
+  setExtensionPath: (extId: string, path: string) =>
+    apiPost<{ ok: boolean; installed: boolean; install_path: string | null }>(
+      `/extensions/${extId}/path`,
+      { path },
+    ),
   renamePreview: (req: Record<string, unknown>) =>
     apiPost<RenamePreviewResponse>('/rename/preview', req),
   renameAiParse: (content: string, fileList: string[]) =>

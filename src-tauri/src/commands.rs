@@ -91,6 +91,16 @@ pub async fn open_metaso_assistant(
 }
 
 #[tauri::command]
+pub fn pick_executable(app: tauri::AppHandle) -> Result<Option<String>, String> {
+    let path = app
+        .dialog()
+        .file()
+        .add_filter("Executable", &["exe"])
+        .blocking_pick_file();
+    Ok(path.and_then(path_to_string))
+}
+
+#[tauri::command]
 pub fn open_path(path: String) -> Result<(), String> {
     // Use OS default handler without deprecated shell.open
     #[cfg(target_os = "windows")]

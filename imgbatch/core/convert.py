@@ -8,11 +8,16 @@ from typing import Callable, List, Optional
 
 from PIL import Image, UnidentifiedImageError
 
-from .common import convert_to_rgb_if_needed, ensure_parent_dir, get_save_format
+from .common import (
+    QUALITY_FORMATS,
+    convert_to_rgb_if_needed,
+    ensure_parent_dir,
+    get_save_format,
+)
 from ..infra.logger import get_logger
 
 
-def convert_image(src: str, dst: str, target_fmt: str) -> int:
+def convert_image(src: str, dst: str, target_fmt: str, quality: int = 85) -> int:
     """Convert a single image to a new format.
 
     Returns new file size in bytes.
@@ -23,13 +28,17 @@ def convert_image(src: str, dst: str, target_fmt: str) -> int:
         from .gif import convert_gif_to_gif
         return convert_gif_to_gif(src, dst)
 
+    save_kw: dict = {'optimize': True}
+    if target_ext_l in QUALITY_FORMATS:
+        save_kw['quality'] = max(1, min(100, int(quality)))
+
     with Image.open(src) as img:
         img = convert_to_rgb_if_needed(img, target_ext_l)
         save_fmt = get_save_format(target_ext_l)
         if save_fmt:
-            img.save(dst, format=save_fmt, optimize=True)
+            img.save(dst, format=save_fmt, **save_kw)
         else:
-            img.save(dst, optimize=True)
+            img.save(dst, **save_kw)
     return os.path.getsize(dst)
 
 
@@ -41,6 +50,7 @@ def run_convert_batch(
     do_backup: bool,
     replace: bool,
     out: Optional[str],
+    quality: int = 85,
     on_progress: Optional[Callable[[float, str], None]] = None,
     on_file_done: Optional[Callable[[str, str, int], None]] = None,
     backup_fn: Optional[Callable[[str, List[str]], str]] = None,
@@ -94,7 +104,7 @@ def run_convert_batch(
                     ensure_parent_dir(dst)
 
                 try:
-                    sa = convert_image(src, dst, target_fmt)
+                    sa = convert_image(src, dst, target_fmt, quality=quality)
                     total_after += sa
 
                     if replace and target_fmt.lower() != current_ext and os.path.exists(src):

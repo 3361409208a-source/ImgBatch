@@ -32,13 +32,43 @@ router = APIRouter()
 
 @router.post("/scan")
 async def scan(req: ScanRequest) -> ScanResponse:
-    files = scan_folder(req.folder, recursive=req.recursive)
+    files: list = []
+    if req.kind in ("image", "all"):
+        files.extend(scan_folder(req.folder, recursive=req.recursive))
+    if req.kind in ("document", "all"):
+        from imgbatch.core.doc_convert import scan_documents
+        files.extend(scan_documents(req.folder, recursive=req.recursive))
+    if req.kind == "all":
+        seen = set()
+        deduped = []
+        for item in files:
+            key = item["path"].lower()
+            if key in seen:
+                continue
+            seen.add(key)
+            deduped.append(item)
+        files = deduped
     return ScanResponse(files=[FileInfo(**f) for f in files])
 
 
 @router.post("/probe")
 async def probe(req: ProbeRequest) -> ScanResponse:
-    files = probe_files(req.paths)
+    files: list = []
+    if req.kind in ("image", "all"):
+        files.extend(probe_files(req.paths))
+    if req.kind in ("document", "all"):
+        from imgbatch.core.doc_convert import probe_documents
+        files.extend(probe_documents(req.paths))
+    if req.kind == "all":
+        seen = set()
+        deduped = []
+        for item in files:
+            key = item["path"].lower()
+            if key in seen:
+                continue
+            seen.add(key)
+            deduped.append(item)
+        files = deduped
     return ScanResponse(files=[FileInfo(**f) for f in files])
 
 

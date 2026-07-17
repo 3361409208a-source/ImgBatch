@@ -87,6 +87,7 @@ pub fn run() {
             commands::get_api_base_url,
             commands::pick_folder,
             commands::pick_files,
+            commands::pick_executable,
             commands::pick_save_file,
             commands::open_path,
             commands::get_launch_payload,

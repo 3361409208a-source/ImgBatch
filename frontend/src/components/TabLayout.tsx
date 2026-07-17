@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next';
 import {
   ImageDown,
   ArrowLeftRight,
+  FileText,
   TextCursorInput,
   Stamp,
   Wand2,
@@ -16,6 +17,7 @@ import {
 export type TabKey =
   | 'compress'
   | 'convert'
+  | 'doc_convert'
   | 'rename'
   | 'watermark'
   | 'ai_rename'
@@ -28,6 +30,7 @@ export type TabKey =
 const TABS: { key: TabKey; icon: LucideIcon }[] = [
   { key: 'compress', icon: ImageDown },
   { key: 'convert', icon: ArrowLeftRight },
+  { key: 'doc_convert', icon: FileText },
   { key: 'rename', icon: TextCursorInput },
   { key: 'watermark', icon: Stamp },
   { key: 'ai_rename', icon: Wand2 },
@@ -41,6 +44,7 @@ const TABS: { key: TabKey; icon: LucideIcon }[] = [
 const TAB_I18N: Record<TabKey, string> = {
   compress: 'tab_compress',
   convert: 'tab_format',
+  doc_convert: 'tab_doc_convert',
   rename: 'tab_rename',
   watermark: 'tab_watermark',
   ai_rename: 'tab_airename',
