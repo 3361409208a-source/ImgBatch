@@ -16,8 +16,8 @@ export function Hero() {
             </h1>
             <p className="mt-2 text-lg font-medium text-primary sm:text-xl">{SITE.taglineEn}</p>
             <p className="mt-6 max-w-xl text-base leading-relaxed text-muted-fg sm:text-lg">
-              压缩、转换、重命名、水印、AI 智能重命名、裁剪透明、规范化与检查——
-              一款面向设计师与开发者的本地批处理工具，支持资源管理器右键与快捷弹窗。
+              压缩、转换、重命名、水印、AI 重命名、裁剪透明、检查、规范化、精灵图与 GIF 编辑——
+              面向设计师与开发者的本地批处理工具，支持资源管理器独立右键菜单与快捷弹窗。
             </p>
 
             <div className="mt-8 flex flex-wrap gap-3">
@@ -58,7 +58,7 @@ export function Hero() {
             </div>
             <div className="absolute -bottom-4 -left-4 hidden rounded-xl border border-border bg-surface px-4 py-3 shadow-lg sm:block">
               <p className="text-xs font-semibold text-foreground">右键快捷操作</p>
-              <p className="mt-0.5 text-xs text-muted-fg">压缩 · 转换 · 重命名 · 更多</p>
+              <p className="mt-0.5 text-xs text-muted-fg">压缩 · 转换 · 重命名 · 水印 · GIF…</p>
             </div>
           </div>
         </div>

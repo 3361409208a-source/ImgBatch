@@ -1,6 +1,6 @@
 # ImgBatch 官方网站
 
-基于 Vite + React + Tailwind 的静态落地页，用于产品介绍与下载引导。
+基于 Vite + React + Tailwind 的静态落地页（v3.0），用于产品介绍与下载引导。
 
 ## 本地开发
 

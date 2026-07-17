@@ -7,9 +7,9 @@ export function Features() {
       <div className="section-container">
         <div className="max-w-3xl">
           <p className="text-sm font-semibold uppercase tracking-wider text-primary">Features</p>
-          <h2 className="section-title mt-2">八大核心功能</h2>
+          <h2 className="section-title mt-2">十大核心功能</h2>
           <p className="section-subtitle">
-            从日常压缩到 AI 重命名，覆盖图片批处理常见场景。所有处理在本地完成，图片不会上传到云端。
+            从压缩转换到 GIF 编辑与 AI 重命名，覆盖图片批处理常见场景。所有处理在本地完成，图片不会上传到云端。
           </p>
         </div>
 

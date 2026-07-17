@@ -26,7 +26,7 @@ export const FEATURES = [
     icon: 'convert',
     title: '格式转换',
     titleEn: 'Convert',
-    desc: 'JPG、PNG、WEBP、BMP、TIFF、GIF、ICO 互转，智能处理透明度。',
+    desc: 'JPG、PNG、WEBP、BMP、TIFF、GIF、ICO 互转，智能处理透明度与动图。',
   },
   {
     icon: 'rename',
@@ -44,7 +44,7 @@ export const FEATURES = [
     icon: 'ai',
     title: 'AI 智能重命名',
     titleEn: 'AI Rename',
-    desc: '接入 DeepSeek API，本地调用不上传图片，支持预览与分批处理。',
+    desc: 'DeepSeek 一键分析；无 Key 时可用秘塔 AI 助手，自动填入需求并解析 JSON 结果。',
   },
   {
     icon: 'trim',
@@ -64,23 +64,51 @@ export const FEATURES = [
     titleEn: 'Normalize',
     desc: 'Alpha 阈值裁剪、统一高度缩放、均匀透明边距，适合标题图规格统一。',
   },
+  {
+    icon: 'spritesheet',
+    title: '精灵图',
+    titleEn: 'Sprite Sheet',
+    desc: '多图智能排列合并，支持间距、2 的幂次画布与 JSON 坐标导出。',
+  },
+  {
+    icon: 'gif',
+    title: 'GIF 编辑',
+    titleEn: 'GIF Edit',
+    desc: '动图优化、缩放、减色、变速、倒放、裁透明边、水印与拆帧导出。',
+  },
+] as const;
+
+export const CONTEXT_MENU_ITEMS = [
+  '压缩',
+  '格式转换',
+  '重命名',
+  '水印',
+  '裁边',
+  '规范化',
+  '检查',
+  'GIF 动图',
 ] as const;
 
 export const DESKTOP_HIGHLIGHTS = [
   {
     icon: 'desktop',
     title: '原生桌面应用',
-    desc: '基于 Tauri 2 + React，轻量快速，Windows 安装包一键部署。',
+    desc: 'Tauri 2 + React 现代界面，Python 本地处理核心，Windows 安装包一键部署。',
   },
   {
     icon: 'context',
     title: '资源管理器右键',
-    desc: '在文件夹、空白处或图片文件上右键，通过 ImgBatch 子菜单直达常用操作。',
+    desc: '八大功能各自独立菜单项（ImgBatch 压缩 / 转换 / 重命名…），每项展开即见全部子选项。',
   },
   {
     icon: 'quick',
     title: '快捷弹窗',
-    desc: '右键触发精简弹窗，预填文件与动作，改几个选项即可一键执行。',
+    desc: '右键触发精简弹窗，预填文件与动作参数，改几个选项即可一键执行。',
+  },
+  {
+    icon: 'ai',
+    title: '秘塔 AI 助手',
+    desc: 'AI 重命名无需 API Key：打开 metaso.cn 自动填入命名需求，粘贴 JSON 即可预览并应用。',
   },
   {
     icon: 'backup',
@@ -93,22 +121,22 @@ export const STEPS = [
   {
     step: '01',
     title: '下载安装',
-    desc: '获取 Windows 安装包，按向导完成安装。安装程序会自动注册右键菜单。',
+    desc: '获取 Windows 安装包并完成安装。安装程序会自动注册资源管理器右键菜单。',
   },
   {
     step: '02',
     title: '选择文件',
-    desc: '打开主窗口拖入文件夹，或在资源管理器中选中图片后使用右键菜单。',
+    desc: '打开主窗口加载文件夹，或在资源管理器中选中图片后使用 ImgBatch 右键菜单。',
   },
   {
     step: '03',
     title: '配置并执行',
-    desc: '在主界面精细调节参数，或在快捷弹窗中使用预设选项，一键开始批处理。',
+    desc: '主界面精细调节，或快捷弹窗使用预设；AI 重命名支持 DeepSeek 与秘塔两种方式。',
   },
 ] as const;
 
 export const STATS = [
-  { value: '8', label: '核心模块' },
+  { value: '10', label: '核心模块' },
   { value: '7+', label: '图片格式' },
   { value: '100%', label: '本地处理' },
 ] as const;

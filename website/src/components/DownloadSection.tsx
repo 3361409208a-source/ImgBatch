@@ -37,7 +37,7 @@ export function DownloadSection() {
             </div>
 
             <p className="mt-6 text-xs text-on-primary/75">
-              部署到 Vercel 后，可将上方链接替换为 GitHub Releases 或自有 CDN 地址。
+              需要 Windows 10/11 · 安装后可在资源管理器右键直接使用各项功能
             </p>
           </div>
         </div>

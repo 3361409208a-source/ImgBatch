@@ -1,4 +1,4 @@
-import { DESKTOP_HIGHLIGHTS } from '../content';
+import { CONTEXT_MENU_ITEMS, DESKTOP_HIGHLIGHTS } from '../content';
 import { FeatureIcon } from './icons';
 
 export function DesktopHighlights() {
@@ -34,16 +34,14 @@ export function DesktopHighlights() {
               <div className="mt-4 space-y-2 font-mono text-sm">
                 <div className="rounded-lg bg-muted px-4 py-3 text-muted-fg">打开(O)</div>
                 <div className="rounded-lg bg-muted px-4 py-3 text-muted-fg">发送到(N)</div>
-                <div className="rounded-lg border-2 border-primary/30 bg-primary/5 px-4 py-3 font-semibold text-primary">
-                  ImgBatch ▸
-                </div>
-                <div className="ml-4 space-y-2 border-l-2 border-primary/20 pl-4">
-                  {['压缩', '格式转换', '批量重命名', '水印', '图片检查'].map((label) => (
-                    <div key={label} className="rounded-lg bg-background px-3 py-2 text-foreground">
-                      {label}
-                    </div>
-                  ))}
-                </div>
+                {CONTEXT_MENU_ITEMS.map((label) => (
+                  <div
+                    key={label}
+                    className="rounded-lg border border-primary/20 bg-primary/5 px-4 py-2.5 font-medium text-primary"
+                  >
+                    ImgBatch {label} ▸
+                  </div>
+                ))}
               </div>
             </div>
 
