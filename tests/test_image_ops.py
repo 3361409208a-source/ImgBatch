@@ -83,6 +83,27 @@ class TestTrimImage:
             assert trimmed.width <= 110
             assert trimmed.height <= 80
 
+    def test_trim_lossy_webp_noisy_white_border(self, tmp_png_dir):
+        """Lossy WebP borders are rarely pure white — still must trim."""
+        webp_src = os.path.join(tmp_png_dir, 'noisy_white.webp')
+        webp_dst = os.path.join(tmp_png_dir, 'noisy_white_trimmed.webp')
+
+        img = Image.new('RGB', (220, 160), (255, 255, 255))
+        # Simulate compression noise on the canvas.
+        for x in range(0, 220, 3):
+            for y in range(0, 160, 3):
+                img.putpixel((x, y), (248 + (x + y) % 7, 250, 252))
+        for x in range(60, 160):
+            for y in range(45, 115):
+                img.putpixel((x, y), (20, 120, 200))
+        img.save(webp_src, format='WEBP', quality=60)
+
+        trim_image(webp_src, webp_dst, padding=0)
+
+        with Image.open(webp_dst) as trimmed:
+            assert trimmed.width < 180
+            assert trimmed.height < 130
+
     def test_trim_fully_transparent(self, tmp_png_dir):
         """Fully transparent image should be saved as-is."""
         src = os.path.join(tmp_png_dir, 'empty.png')
