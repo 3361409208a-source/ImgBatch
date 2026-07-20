@@ -71,6 +71,22 @@ def cmd_compress(args):
     file_list = [f['name'] for f in files]
     print(f'Found {len(file_list)} images in {folder}')
 
+    state = CLITaskState()
+
+    if getattr(args, 'mode', 'normal') == 'balanced':
+        from ..core.balanced_compress import run_balanced_compress_batch
+        result = run_balanced_compress_batch(
+            state, folder, file_list,
+            target_mb=args.target_mb,
+            do_backup=args.backup, replace=not args.output,
+            out=args.output,
+            on_progress=_on_progress_cli(state),
+        )
+        _print_result(result, 'compress')
+        if result.get('skipped'):
+            print(f"Skipped {len(result['skipped'])} non-animated files.")
+        return 0
+
     options = {}
     if args.also_convert:
         options['convert'] = True
@@ -396,6 +412,10 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument('--resize', type=int, default=100, help='Resize %% 1-100 (default: 100)')
     p.add_argument('--exif', choices=['keep', 'strip', 'orientation_only'], default='keep',
                    help='EXIF mode (default: keep)')
+    p.add_argument('--mode', choices=['normal', 'balanced'], default='normal',
+                   help='Compression mode (balanced = target size for animated WebP/GIF)')
+    p.add_argument('--target-mb', type=float, default=1.15,
+                   help='Target file size in MB for balanced mode (default: 1.15)')
     p.add_argument('--also-convert', action='store_true', help='Also convert format')
     p.add_argument('--to', default='.png', help='Target format for --also-convert')
     p.add_argument('--also-watermark', action='store_true', help='Also add watermark')

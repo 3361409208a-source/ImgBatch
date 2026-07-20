@@ -27,12 +27,25 @@ def _backup_fn(folder, file_list):
 # ── Task dispatchers ─────────────────────────────────────────────────────
 
 def _dispatch_compress(state, folder, file_list, params, on_progress=None):
-    from imgbatch.core.compress import run_compress_batch
-    options = params.get("options", {})
     do_backup = params.get("do_backup", False)
     replace = params.get("replace", True)
     out = params.get("out")
     backup_fn = _backup_fn if do_backup else None
+
+    if params.get("mode") == "balanced":
+        from imgbatch.core.balanced_compress import run_balanced_compress_batch
+        return run_balanced_compress_batch(
+            state, folder, file_list,
+            target_mb=float(params.get("target_mb", 1.15)),
+            do_backup=do_backup,
+            replace=replace,
+            out=out,
+            on_progress=on_progress,
+            backup_fn=backup_fn,
+        )
+
+    from imgbatch.core.compress import run_compress_batch
+    options = params.get("options", {})
     return run_compress_batch(
         state, folder, file_list,
         quality=params.get("quality", 75),
