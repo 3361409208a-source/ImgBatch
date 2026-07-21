@@ -10,7 +10,7 @@ import tempfile
 from pathlib import Path
 from typing import Callable, Dict, List, Optional, Tuple
 
-from PIL import Image, ImageSequence, UnidentifiedImageError
+from PIL import Image, UnidentifiedImageError
 
 from .common import ensure_parent_dir
 from .gif import save_gif
@@ -23,6 +23,46 @@ def _n_frames(img: Image.Image) -> int:
     return int(getattr(img, 'n_frames', 1) or 1)
 
 
+def _probe_frame_count(img: Image.Image) -> int:
+    """Return animation frame count, probing with seek when metadata is unreliable."""
+    count = _n_frames(img)
+    if count > 1:
+        return count
+    if not getattr(img, 'is_animated', False):
+        return 1
+    probed = 0
+    try:
+        while True:
+            img.seek(probed)
+            probed += 1
+    except EOFError:
+        pass
+    try:
+        img.seek(0)
+    except EOFError:
+        pass
+    return max(probed, 1)
+
+
+def _frame_duration(img: Image.Image, default: int) -> int:
+    raw = img.info.get('duration', default)
+    try:
+        return max(40 if default >= 40 else 10, int(raw or default))
+    except (TypeError, ValueError):
+        return default
+
+
+def _normalize_durations(durations: List[int], frame_count: int, default: int) -> List[int]:
+    if frame_count <= 0:
+        return []
+    if not durations:
+        return [default] * frame_count
+    if len(durations) < frame_count:
+        pad = durations[-1]
+        durations = durations + [pad] * (frame_count - len(durations))
+    return durations[:frame_count]
+
+
 def is_animated_media(path: str) -> bool:
     """True for multi-frame GIF or animated WebP."""
     ext = Path(path).suffix.lower()
@@ -30,9 +70,7 @@ def is_animated_media(path: str) -> bool:
         return False
     try:
         with Image.open(path) as img:
-            if ext == '.gif':
-                return _n_frames(img) > 1
-            return bool(getattr(img, 'is_animated', False)) and _n_frames(img) > 1
+            return _probe_frame_count(img) > 1
     except (UnidentifiedImageError, OSError):
         return False
 
@@ -45,23 +83,28 @@ def load_animation(src: str) -> Tuple[List[Image.Image], List[int], int, str]:
     loop = 0
 
     with Image.open(src) as img:
-        if ext == '.gif':
-            loop = int(img.info.get('loop', 0) or 0)
-            count = _n_frames(img)
-            for i in range(count):
-                img.seek(i)
-                frames.append(img.copy().convert('RGBA'))
-                durations.append(max(10, int(img.info.get('duration', 100) or 100)))
-            return frames, durations, loop, 'gif'
+        loop = int(img.info.get('loop', 0) or 0)
+        count = _probe_frame_count(img)
+        default_ms = 83 if ext == '.webp' else 100
 
-        if ext == '.webp':
-            for frame in ImageSequence.Iterator(img):
-                frames.append(frame.convert('RGBA').copy())
-                durations.append(max(40, int(frame.info.get('duration', 83) or 83)))
-            loop = int(img.info.get('loop', 0) or 0)
-            return frames, durations, loop, 'webp'
+        for i in range(count):
+            img.seek(i)
+            frames.append(img.copy().convert('RGBA'))
+            durations.append(_frame_duration(img, default_ms))
 
-    raise ValueError(f'Unsupported animation format: {ext}')
+        meta_duration = img.info.get('duration')
+        if isinstance(meta_duration, (list, tuple)) and len(meta_duration) >= len(frames):
+            durations = [
+                max(default_ms if ext == '.webp' else 10, int(d or default_ms))
+                for d in meta_duration[:len(frames)]
+            ]
+
+    durations = _normalize_durations(durations, len(frames), 83 if ext == '.webp' else 100)
+    if len(frames) < 2:
+        raise ValueError('Not an animation (fewer than 2 frames)')
+
+    fmt = 'gif' if ext == '.gif' else 'webp'
+    return frames, durations, loop, fmt
 
 
 def _width_grid(orig_w: int) -> List[int]:
@@ -87,22 +130,43 @@ def _resize_frames(
     return [f.resize((target_width, target_h), Image.LANCZOS) for f in frames]
 
 
+def _save_webp_animation(
+    frames: List[Image.Image],
+    durations: List[int],
+    loop: int,
+    dest,
+    *,
+    quality: Optional[int] = None,
+    lossless: bool = False,
+) -> None:
+    if len(frames) < 2:
+        raise ValueError('WebP animation requires at least 2 frames')
+
+    durs = _normalize_durations(durations, len(frames), 83)
+    save_kw: dict = {
+        'format': 'WEBP',
+        'save_all': True,
+        'append_images': frames[1:],
+        'duration': durs,
+        'loop': loop,
+        'method': 4,
+    }
+    if lossless:
+        save_kw['lossless'] = True
+    else:
+        save_kw['quality'] = max(1, min(100, int(quality or 80)))
+
+    frames[0].save(dest, **save_kw)
+
+
 def _save_webp_variant(
     frames: List[Image.Image],
     durations: List[int],
+    loop: int,
     quality: int,
 ) -> int:
     buf = io.BytesIO()
-    frames[0].save(
-        buf,
-        format='WEBP',
-        save_all=True,
-        append_images=frames[1:],
-        duration=durations,
-        loop=0,
-        quality=quality,
-        method=4,
-    )
+    _save_webp_animation(frames, durations, loop, buf, quality=quality)
     return buf.tell()
 
 
@@ -126,21 +190,21 @@ def _save_gif_variant(
 def _encode_webp_to_path(
     frames: List[Image.Image],
     durations: List[int],
+    loop: int,
     dst: str,
     quality: int,
 ) -> int:
     ensure_parent_dir(dst)
-    frames[0].save(
-        dst,
-        format='WEBP',
-        save_all=True,
-        append_images=frames[1:],
-        duration=durations,
-        loop=0,
-        quality=quality,
-        method=4,
-    )
+    _save_webp_animation(frames, durations, loop, dst, quality=quality)
     return os.path.getsize(dst)
+
+
+def _verify_animation(path: str, min_frames: int = 2) -> int:
+    with Image.open(path) as img:
+        count = _probe_frame_count(img)
+    if count < min_frames:
+        raise ValueError(f'Output is not animated ({count} frame(s))')
+    return count
 
 
 def _search_variants(
@@ -159,7 +223,7 @@ def _search_variants(
         for width in widths:
             imgs = _resize_frames(frames, width, orig_w, orig_h)
             for q in qualities:
-                size = _save_webp_variant(imgs, durations, q)
+                size = _save_webp_variant(imgs, durations, loop, q)
                 variants.append((size, width, q))
     else:
         color_steps = (256, 192, 128, 64)
@@ -190,9 +254,6 @@ def compress_anim_to_target(
 ) -> Dict[str, object]:
     """Compress animated WebP/GIF toward target_bytes. Returns metadata dict."""
     frames, durations, loop, fmt = load_animation(src)
-    if not frames:
-        raise ValueError('No animation frames')
-
     orig_w, orig_h = frames[0].size
     variants = _search_variants(frames, durations, loop, fmt, orig_w, orig_h)
     best = pick_best_variant(variants, target_bytes)
@@ -200,12 +261,14 @@ def compress_anim_to_target(
     best_frames = _resize_frames(frames, best_width, orig_w, orig_h)
 
     if fmt == 'webp':
-        final_size = _encode_webp_to_path(best_frames, durations, dst, best_param)
+        final_size = _encode_webp_to_path(best_frames, durations, loop, dst, best_param)
+        out_frames = _verify_animation(dst)
         return {
             'format': 'webp',
             'size': final_size,
             'width': best_width,
             'quality': best_param,
+            'frames': out_frames,
             'target_bytes': target_bytes,
             'under_target': final_size <= target_bytes,
         }
@@ -213,11 +276,13 @@ def compress_anim_to_target(
     final_size = save_gif(
         best_frames, durations, dst, loop=loop, optimize=True, colors=best_param,
     )
+    out_frames = _verify_animation(dst)
     return {
         'format': 'gif',
         'size': final_size,
         'width': best_width,
         'colors': best_param,
+        'frames': out_frames,
         'target_bytes': target_bytes,
         'under_target': final_size <= target_bytes,
     }

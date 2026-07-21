@@ -6,7 +6,7 @@ import { OutputOptions } from '../components/OutputOptions';
 import { ToolPanel } from '../components/ToolPanel';
 import { api } from '../api/client';
 
-type CompressMode = 'normal' | 'balanced';
+type CompressMode = 'normal' | 'balanced' | 'webm';
 
 function requireOut(replace: boolean, out: string): boolean {
   if (!replace && !out.trim()) {
@@ -30,6 +30,10 @@ export function CompressPage() {
   const [resizePct, setResizePct] = useState(100);
   const [exifMode, setExifMode] = useState('keep');
   const [targetMb, setTargetMb] = useState(1.15);
+  const [maxEdge, setMaxEdge] = useState(256);
+  const [crf, setCrf] = useState(40);
+  const [fps, setFps] = useState(24);
+  const [keepAlpha, setKeepAlpha] = useState(true);
   const [replace, setReplace] = useState(true);
   const [doBackup, setDoBackup] = useState(true);
   const [out, setOut] = useState('');
@@ -71,6 +75,19 @@ export function CompressPage() {
       });
       return;
     }
+    if (mode === 'webm') {
+      void startTask('compress', {
+        mode: 'webm',
+        max_edge: maxEdge,
+        crf,
+        fps,
+        keep_alpha: keepAlpha,
+        do_backup: doBackup,
+        replace,
+        out: replace ? null : out,
+      });
+      return;
+    }
     void startTask('compress', {
       quality,
       resize_pct: resizePct,
@@ -81,31 +98,27 @@ export function CompressPage() {
     });
   };
 
+  const modeBtn = (key: CompressMode, label: string) => (
+    <button
+      type="button"
+      key={key}
+      onClick={() => setMode(key)}
+      className={`px-3 py-1.5 text-sm rounded-md border transition-colors ${
+        mode === key
+          ? 'border-primary bg-primary/10 text-foreground'
+          : 'border-border text-muted-foreground hover:border-primary/40'
+      }`}
+    >
+      {label}
+    </button>
+  );
+
   return (
     <ToolPanel>
       <div className="flex flex-wrap gap-2">
-        <button
-          type="button"
-          onClick={() => setMode('normal')}
-          className={`px-3 py-1.5 text-sm rounded-md border transition-colors ${
-            mode === 'normal'
-              ? 'border-primary bg-primary/10 text-foreground'
-              : 'border-border text-muted-foreground hover:border-primary/40'
-          }`}
-        >
-          {t('compress_mode_normal')}
-        </button>
-        <button
-          type="button"
-          onClick={() => setMode('balanced')}
-          className={`px-3 py-1.5 text-sm rounded-md border transition-colors ${
-            mode === 'balanced'
-              ? 'border-primary bg-primary/10 text-foreground'
-              : 'border-border text-muted-foreground hover:border-primary/40'
-          }`}
-        >
-          {t('compress_mode_balanced')}
-        </button>
+        {modeBtn('normal', t('compress_mode_normal'))}
+        {modeBtn('balanced', t('compress_mode_balanced'))}
+        {modeBtn('webm', t('compress_mode_webm'))}
       </div>
 
       {mode === 'balanced' ? (
@@ -122,6 +135,54 @@ export function CompressPage() {
             />
           </label>
           <p className="text-xs text-muted-foreground max-w-xl">{t('compress_balanced_hint')}</p>
+        </div>
+      ) : mode === 'webm' ? (
+        <div className="flex flex-col gap-3">
+          <div className="flex flex-wrap items-end gap-6">
+            <label className="flex flex-col gap-1.5 w-28">
+              <span className="label-muted">{t('webm_max_edge')}</span>
+              <input
+                type="number"
+                min={32}
+                max={4096}
+                value={maxEdge}
+                onChange={(e) => setMaxEdge(Number(e.target.value))}
+                className="field"
+              />
+            </label>
+            <label className="flex flex-col gap-1.5 w-24">
+              <span className="label-muted">{t('webm_crf')}</span>
+              <input
+                type="number"
+                min={0}
+                max={63}
+                value={crf}
+                onChange={(e) => setCrf(Number(e.target.value))}
+                className="field"
+              />
+            </label>
+            <label className="flex flex-col gap-1.5 w-24">
+              <span className="label-muted">{t('webm_fps')}</span>
+              <input
+                type="number"
+                min={1}
+                max={60}
+                value={fps}
+                onChange={(e) => setFps(Number(e.target.value))}
+                className="field"
+              />
+            </label>
+          </div>
+          <label className="flex items-center gap-2 text-sm cursor-pointer">
+            <input
+              type="checkbox"
+              checked={keepAlpha}
+              onChange={(e) => setKeepAlpha(e.target.checked)}
+              className="accent-primary"
+            />
+            {t('webm_keep_alpha')}
+          </label>
+          <p className="text-xs text-muted-foreground max-w-xl">{t('compress_webm_hint')}</p>
         </div>
       ) : (
         <div className="flex items-end gap-8 flex-wrap">
@@ -172,7 +233,11 @@ export function CompressPage() {
       />
       <button type="button" onClick={handleStart} className="btn-cta w-fit">
         <Play size={14} strokeWidth={1.75} />
-        {mode === 'balanced' ? t('start_balanced_compress') : t('start_compress')}
+        {mode === 'balanced'
+          ? t('start_balanced_compress')
+          : mode === 'webm'
+            ? t('start_webm_compress')
+            : t('start_compress')}
       </button>
     </ToolPanel>
   );

@@ -3,7 +3,7 @@ import { Search, RotateCcw } from 'lucide-react';
 import { useAppStore } from '../store/appStore';
 import { DOC_FILTER_FORMATS } from '../utils/docFormats';
 
-const IMAGE_FORMATS = ['ALL', 'PNG', 'JPEG', 'WEBP', 'BMP', 'TIFF', 'GIF', 'ICO', 'AVIF', 'HEIC'];
+const IMAGE_FORMATS = ['ALL', 'PNG', 'JPEG', 'WEBP', 'BMP', 'TIFF', 'GIF', 'ICO', 'AVIF', 'HEIC', 'WEBM'];
 const SIZES = ['all', 'lt_50kb', 'lt_100kb', 'lt_500kb', 'lt_1mb', '100kb_1mb', 'gt_500kb', 'gt_1mb'];
 
 export function FilterBar() {

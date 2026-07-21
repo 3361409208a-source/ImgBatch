@@ -11,7 +11,7 @@ from pathlib import Path
 from PIL import Image, UnidentifiedImageError
 
 _BASE_SUPPORTED_EXT = {
-    '.jpg', '.jpeg', '.png', '.webp', '.bmp', '.tiff', '.tif', '.gif', '.ico',
+    '.jpg', '.jpeg', '.png', '.webp', '.bmp', '.tiff', '.tif', '.gif', '.ico', '.webm',
 }
 _HEIF_INPUT_EXT = {'.heic', '.heif'}
 _BASE_CONVERT_TARGETS = [
@@ -254,7 +254,7 @@ SIZE_PRESETS = {
     'custom': (None, None),  # bounds come from custom min/max fields
 }
 
-FILTER_FORMATS = ('ALL', 'PNG', 'JPEG', 'WEBP', 'BMP', 'TIFF', 'GIF', 'ICO', 'AVIF', 'HEIC')
+FILTER_FORMATS = ('ALL', 'PNG', 'JPEG', 'WEBP', 'BMP', 'TIFF', 'GIF', 'ICO', 'AVIF', 'HEIC', 'WEBM')
 
 
 def parse_dimensions(dim_str: str) -> Tuple[Optional[int], Optional[int]]:

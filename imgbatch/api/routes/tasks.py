@@ -44,6 +44,21 @@ def _dispatch_compress(state, folder, file_list, params, on_progress=None):
             backup_fn=backup_fn,
         )
 
+    if params.get("mode") == "webm":
+        from imgbatch.core.webm_compress import run_webm_compress_batch
+        return run_webm_compress_batch(
+            state, folder, file_list,
+            max_edge=int(params.get("max_edge", 256)),
+            crf=int(params.get("crf", 40)),
+            fps=int(params.get("fps", 24)),
+            keep_alpha=bool(params.get("keep_alpha", True)),
+            do_backup=do_backup,
+            replace=replace,
+            out=out,
+            on_progress=on_progress,
+            backup_fn=backup_fn,
+        )
+
     from imgbatch.core.compress import run_compress_batch
     options = params.get("options", {})
     return run_compress_batch(

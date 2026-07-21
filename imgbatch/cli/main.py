@@ -87,6 +87,23 @@ def cmd_compress(args):
             print(f"Skipped {len(result['skipped'])} non-animated files.")
         return 0
 
+    if getattr(args, 'mode', 'normal') == 'webm':
+        from ..core.webm_compress import run_webm_compress_batch
+        result = run_webm_compress_batch(
+            state, folder, file_list,
+            max_edge=args.max_edge,
+            crf=args.crf,
+            fps=args.fps,
+            keep_alpha=not args.no_alpha,
+            do_backup=args.backup, replace=not args.output,
+            out=args.output,
+            on_progress=_on_progress_cli(state),
+        )
+        _print_result(result, 'compress')
+        if result.get('skipped'):
+            print(f"Skipped {len(result['skipped'])} non-WebM files.")
+        return 0
+
     options = {}
     if args.also_convert:
         options['convert'] = True
@@ -412,10 +429,18 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument('--resize', type=int, default=100, help='Resize %% 1-100 (default: 100)')
     p.add_argument('--exif', choices=['keep', 'strip', 'orientation_only'], default='keep',
                    help='EXIF mode (default: keep)')
-    p.add_argument('--mode', choices=['normal', 'balanced'], default='normal',
-                   help='Compression mode (balanced = target size for animated WebP/GIF)')
+    p.add_argument('--mode', choices=['normal', 'balanced', 'webm'], default='normal',
+                   help='Compression mode (balanced=target size anim; webm=VP9 alpha WebM)')
     p.add_argument('--target-mb', type=float, default=1.15,
                    help='Target file size in MB for balanced mode (default: 1.15)')
+    p.add_argument('--max-edge', type=int, default=256,
+                   help='Max edge length in px for webm mode (default: 256)')
+    p.add_argument('--crf', type=int, default=40,
+                   help='VP9 CRF for webm mode, 0-63 (default: 40)')
+    p.add_argument('--fps', type=int, default=24,
+                   help='Output FPS for webm mode (default: 24)')
+    p.add_argument('--no-alpha', action='store_true',
+                   help='Webm mode: drop alpha channel (black background)')
     p.add_argument('--also-convert', action='store_true', help='Also convert format')
     p.add_argument('--to', default='.png', help='Target format for --also-convert')
     p.add_argument('--also-watermark', action='store_true', help='Also add watermark')

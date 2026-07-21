@@ -45,6 +45,13 @@ def compress_image(
         from .gif import compress_gif_animated
         return compress_gif_animated(src, dst, resize_pct=resize_pct)
 
+    with Image.open(src) as probe:
+        if src_ext in {'.gif', '.webp'} and int(getattr(probe, 'n_frames', 1) or 1) > 1:
+            raise ValueError(
+                f'Animated {src_ext} requires compress mode balanced; '
+                'standard compress only saves the first frame.'
+            )
+
     with Image.open(src) as img:
         original_exif = img.info.get('exif')
         img = convert_to_rgb_if_needed(img, ext)
