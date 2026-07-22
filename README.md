@@ -6,7 +6,7 @@
 
 ### 全能图片批处理工具箱 · All-in-One Batch Image Toolkit
 
-压缩 · 格式转换 · 文档转换 · 重命名 · 水印 · AI 重命名 · 裁剪透明 · 检查 · 规范化 · 精灵图 · GIF 编辑
+压缩 · 格式转换 · 文档转换 · 重命名 · 水印 · AI 重命名 · 裁剪透明 · 检查 · 规范化 · 精灵图 · GIF 编辑 · 视频转动图 · 抠图
 
 [![Tauri](https://img.shields.io/badge/Tauri-2-24C8DB?logo=tauri&logoColor=white)](https://tauri.app)
 [![React](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=black)](https://react.dev)
@@ -37,14 +37,17 @@
 | 🖱️ **资源管理器右键** | 压缩 / 转换 / 重命名 / 水印 / 裁边 / 规范化 / 检查 / GIF — 每项独立菜单，各自带子选项 |
 | ⚡ **快捷弹窗** | 右键 `--quick` 启动精简窗口，预填文件与动作，一键执行 |
 | 🎞️ **GIF 动图编辑** | 优化、缩放、减色、变速、倒放、裁透明边、水印、拆帧等 |
+| 🎬 **视频转动图** | WebM/MP4/MOV 等转为动画 WebP 或 GIF；支持**白底抠图**输出透明背景 GIF |
+| ✂️ **抠图** | AI 模型抠图（需要扩展包） |
 | 🧩 **精灵图** | 智能排列、间距、2 的幂次画布、导出 JSON 坐标 |
 | 🤖 **AI 重命名增强** | DeepSeek 一键分析；无 API Key 时可打开秘塔 AI，自动填入需求并粘贴 JSON 解析 |
 | ↩️ **撤销与备份** | 操作撤销、自动备份、备份管理 |
+| 🔧 **一键安装 FFmpeg** | 需要 FFmpeg 的功能可一键下载便携版到本地扩展目录，无需系统全局安装 |
 | 🌐 **中英双语** | 界面 i18n 完整覆盖 |
 
 ---
 
-## 十大功能模块
+## 十二大功能模块
 
 | 模块 | 能力摘要 |
 |:---|:---|
@@ -59,6 +62,8 @@
 | **规范化** | Alpha 阈值、统一高度、均匀边距 |
 | **精灵图** | 多图合并为雪碧图，可选 JSON 坐标 |
 | **GIF 编辑** | 动图优化、缩放、减色、变速、倒放、裁边、水印、拆帧 |
+| **视频转动图** | WebM/MP4/MOV → WebP/GIF；**白底抠图**输出透明背景 GIF，可调白底相似度与边缘混合 |
+| **抠图** | AI 模型抠图（需要扩展包） |
 
 ---
 
@@ -138,6 +143,7 @@ npm run dev
 python -m imgbatch.cli compress -f ./photos --quality 75
 python -m imgbatch.cli convert -f ./photos --to webp
 python -m imgbatch.cli ai-rename -f ./photos --api-key sk-xxx --apply
+python -m imgbatch.cli video-anim -f ./videos --to .gif --white-key
 ```
 
 ---
@@ -149,10 +155,10 @@ ImgBatch/
 ├── frontend/                 # React + Vite 主界面
 ├── src-tauri/                # Tauri 2 壳（Rust）
 ├── imgbatch/                 # Python 核心 + API 侧车
-│   ├── core/                 # 图片处理逻辑
+│   ├── core/                 # 图片处理逻辑（含 video_anim / matting）
 │   ├── api/                  # FastAPI 路由
 │   ├── cli/                  # 命令行
-│   └── ui/                   # 旧版 tkinter UI（兼容）
+│   └── infra/                # 基础组件（日志、配置）
 ├── website/                  # 官方落地页（Vercel）
 ├── scripts/                  # 构建、右键菜单注册脚本
 └── tests/                    # pytest 测试
