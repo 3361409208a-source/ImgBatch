@@ -3,6 +3,26 @@ import { api } from '../api/client';
 import { subscribeTask } from '../api/sse';
 import type { AppConfig, FileInfo, FilterRequest, TaskCreateRequest } from '../api/types';
 
+export type TargetMode = 'folder' | 'single' | 'multi';
+
+function dirnameOf(path: string): string {
+  const normalized = path.replace(/\\/g, '/');
+  const idx = normalized.lastIndexOf('/');
+  if (idx <= 0) return path;
+  return path.slice(0, idx);
+}
+
+function relativeName(absPath: string, folder: string): string {
+  const normFolder = folder.replace(/\\/g, '/').replace(/\/+$/, '');
+  const normPath = absPath.replace(/\\/g, '/');
+  const prefix = `${normFolder.toLowerCase()}/`;
+  if (normPath.toLowerCase().startsWith(prefix)) {
+    return absPath.slice(folder.length).replace(/^[\\/]+/, '');
+  }
+  const parts = absPath.split(/[\\/]/);
+  return parts[parts.length - 1] || absPath;
+}
+
 interface AppStore {
   folder: string;
   recursive: boolean;
@@ -10,6 +30,11 @@ interface AppStore {
   filteredFiles: FileInfo[];
   selectedFile: FileInfo | null;
   previewUrl: string;
+  previewText: string;
+  previewKind: 'image' | 'text' | 'none';
+
+  targetMode: TargetMode;
+  pinnedPaths: string[];
 
   filterName: string;
   filterFormat: string;
@@ -34,6 +59,8 @@ interface AppStore {
   setFolder: (f: string) => void;
   setRecursive: (r: boolean) => void;
   setScanKind: (kind: 'image' | 'document' | 'all') => void;
+  loadPinnedFiles: (paths: string[]) => Promise<void>;
+  clearPinnedMode: () => Promise<void>;
   refreshFiles: () => Promise<void>;
   applyFilter: () => Promise<void>;
   selectFile: (f: FileInfo | null) => void;
@@ -56,6 +83,11 @@ export const useAppStore = create<AppStore>((set, get) => ({
   filteredFiles: [],
   selectedFile: null,
   previewUrl: '',
+  previewText: '',
+  previewKind: 'none',
+
+  targetMode: 'folder',
+  pinnedPaths: [],
 
   filterName: '',
   filterFormat: 'ALL',
@@ -78,21 +110,86 @@ export const useAppStore = create<AppStore>((set, get) => ({
   scanKind: 'image',
 
   setFolder: (f) => {
-    set({ folder: f });
+    set({
+      folder: f,
+      targetMode: 'folder',
+      pinnedPaths: [],
+    });
     if (!f) {
-      set({ allFiles: [], filteredFiles: [], selectedFile: null, previewUrl: '' });
+      set({ allFiles: [], filteredFiles: [], selectedFile: null, previewUrl: '', previewText: '', previewKind: 'none' });
     }
   },
   setRecursive: (r) => set({ recursive: r }),
   setScanKind: (kind) => set({ scanKind: kind, filterFormat: 'ALL' }),
 
+  loadPinnedFiles: async (paths) => {
+    const unique = [...new Set(paths.map((p) => p.trim()).filter(Boolean))];
+    if (unique.length === 0) return;
+    const folder = dirnameOf(unique[0]);
+    const mode: TargetMode = unique.length === 1 ? 'single' : 'multi';
+    try {
+      set({
+        taskError: '',
+        statusMessage: '正在加载…',
+        folder,
+        targetMode: mode,
+        pinnedPaths: unique,
+      });
+      const res = await api.probe(unique, get().scanKind);
+      const files = res.files.map((f) => ({
+        ...f,
+        name: relativeName(f.path, folder),
+      }));
+      set({
+        allFiles: files,
+        filteredFiles: files,
+        selectedFile: files[0] ?? null,
+        previewUrl: '',
+        previewText: '',
+        previewKind: 'none',
+        taskError: '',
+        statusMessage:
+          mode === 'single'
+            ? (get().scanKind === 'document'
+              ? `单文档：${files[0]?.name || unique[0]}`
+              : `单张模式：${files[0]?.name || unique[0]}`)
+            : (get().scanKind === 'document'
+              ? `多文档：已选 ${files.length} 个文件`
+              : `多图模式：已选 ${files.length} 个文件`),
+      });
+      await get().applyFilter();
+      if (files[0]) await get().loadPreview(files[0].path);
+      await get().refreshUndoStatus();
+    } catch (e) {
+      const msg = String(e);
+      set({ taskError: msg, statusMessage: msg, allFiles: [], filteredFiles: [] });
+    }
+  },
+
+  clearPinnedMode: async () => {
+    const { folder } = get();
+    set({ targetMode: 'folder', pinnedPaths: [], selectedFile: null, previewUrl: '', previewText: '', previewKind: 'none' });
+    if (folder) await get().refreshFiles();
+    else set({ allFiles: [], filteredFiles: [], statusMessage: '' });
+  },
+
   refreshFiles: async () => {
-    const { folder, recursive, scanKind } = get();
+    const { folder, recursive, scanKind, targetMode, pinnedPaths } = get();
+    if (targetMode !== 'folder' && pinnedPaths.length > 0) {
+      await get().loadPinnedFiles(pinnedPaths);
+      return;
+    }
     if (!folder) return;
     try {
       set({ taskError: '', statusMessage: '正在扫描…' });
       const res = await api.scan(folder, recursive, scanKind);
-      set({ allFiles: res.files, filteredFiles: res.files, taskError: '' });
+      set({
+        allFiles: res.files,
+        filteredFiles: res.files,
+        taskError: '',
+        targetMode: 'folder',
+        pinnedPaths: [],
+      });
       await get().applyFilter();
       await get().refreshUndoStatus();
       const emptyMsg = scanKind === 'document'
@@ -131,15 +228,19 @@ export const useAppStore = create<AppStore>((set, get) => ({
   selectFile: (f) => {
     set({ selectedFile: f });
     if (f) get().loadPreview(f.path);
-    else set({ previewUrl: '' });
+    else set({ previewUrl: '', previewText: '', previewKind: 'none' });
   },
 
   loadPreview: async (path) => {
     try {
       const res = await api.previewThumb(path, 400);
-      set({ previewUrl: res.data_url });
+      set({
+        previewUrl: res.data_url || '',
+        previewText: res.text || '',
+        previewKind: res.kind || (res.data_url ? 'image' : res.text ? 'text' : 'none'),
+      });
     } catch {
-      set({ previewUrl: '' });
+      set({ previewUrl: '', previewText: '', previewKind: 'none' });
     }
   },
 

@@ -88,6 +88,7 @@ DEFAULT_CONFIG: Dict[str, Any] = {
     "recursive_scan": False,
     # Extension packs (optional, user-installed)
     "libreoffice_path": "",
+    "ffmpeg_path": "",
 }
 
 

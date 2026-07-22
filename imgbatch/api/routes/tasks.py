@@ -258,6 +258,49 @@ def _dispatch_doc_convert(state, folder, file_list, params, on_progress=None):
     )
 
 
+def _dispatch_matting(state, folder, file_list, params, on_progress=None):
+    from imgbatch.core.matting import run_matting_batch
+    do_backup = params.get("do_backup", False)
+    backup_fn = _backup_fn if do_backup else None
+    return run_matting_batch(
+        state, folder, file_list,
+        engine=params.get("engine", "smart"),
+        bg_mode=params.get("bg_mode", "transparent"),
+        bg_color=params.get("bg_color", "#FFFFFF"),
+        feather=params.get("feather", 1),
+        sensitivity=params.get("sensitivity", 30),
+        do_backup=do_backup,
+        replace=params.get("replace", False),
+        out=params.get("out"),
+        on_progress=on_progress,
+        backup_fn=backup_fn,
+    )
+
+
+def _dispatch_video_anim(state, folder, file_list, params, on_progress=None):
+    from imgbatch.core.video_anim import run_video_anim_batch
+    do_backup = params.get("do_backup", False)
+    backup_fn = _backup_fn if do_backup else None
+    return run_video_anim_batch(
+        state, folder, file_list,
+        target=params.get("target", ".webp"),
+        max_edge=int(params.get("max_edge", 0) or 0),
+        fps=int(params.get("fps", 24)),
+        quality=int(params.get("quality", 80)),
+        colors=int(params.get("colors", 256)),
+        keep_alpha=bool(params.get("keep_alpha", True)),
+        clean_fringe=bool(params.get("clean_fringe", False)),
+        white_key=bool(params.get("white_key", False)),
+        white_key_similarity=float(params.get("white_key_similarity", 0.12)),
+        white_key_blend=float(params.get("white_key_blend", 0.04)),
+        do_backup=do_backup,
+        replace=params.get("replace", True),
+        out=params.get("out"),
+        on_progress=on_progress,
+        backup_fn=backup_fn,
+    )
+
+
 DISPATCHERS = {
     "compress": _dispatch_compress,
     "convert": _dispatch_convert,
@@ -271,6 +314,8 @@ DISPATCHERS = {
     "normalize": _dispatch_normalize,
     "spritesheet": _dispatch_spritesheet,
     "gif_edit": _dispatch_gif_edit,
+    "matting": _dispatch_matting,
+    "video_anim": _dispatch_video_anim,
 }
 
 

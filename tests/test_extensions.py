@@ -11,10 +11,12 @@ from imgbatch.core.extensions import (
 
 def test_extensions_catalog():
     catalog = get_extensions_catalog()
-    assert catalog['total_count'] >= 1
+    assert catalog['total_count'] >= 2
     lo = next(x for x in catalog['extensions'] if x['id'] == 'libreoffice')
     assert lo['name']
     assert lo['download_url']
+    ff = next(x for x in catalog['extensions'] if x['id'] == 'ffmpeg')
+    assert 'ffmpeg' in ff['download_url'].lower() or 'gyan' in ff['download_url'].lower()
 
 
 def test_start_install_rejects_unknown():
@@ -43,3 +45,20 @@ def test_catalog_has_direct_url_and_install_dir():
     lo = next(x for x in catalog['extensions'] if x['id'] == 'libreoffice')
     assert lo['download_url'].startswith('https://download.documentfoundation.org/')
     assert lo['install_dir']
+    ff = next(x for x in catalog['extensions'] if x['id'] == 'ffmpeg')
+    assert ff['install_dir']
+    assert ff['download_url'].startswith('https://')
+
+
+def test_ffmpeg_already_installed_short_circuits(monkeypatch):
+    monkeypatch.setattr(
+        'imgbatch.core.extensions.is_ffmpeg_installed',
+        lambda: True,
+    )
+    monkeypatch.setattr(
+        'imgbatch.core.extensions.find_ffmpeg_extension',
+        lambda: r'C:\ffmpeg\bin\ffmpeg.exe',
+    )
+    res = start_install_extension('ffmpeg')
+    assert res['already_installed'] is True
+    assert res['started'] is False

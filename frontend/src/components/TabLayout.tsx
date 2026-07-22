@@ -11,6 +11,8 @@ import {
   Ruler,
   LayoutGrid,
   Film,
+  Scissors,
+  Clapperboard,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -25,7 +27,9 @@ export type TabKey =
   | 'inspect'
   | 'normalize'
   | 'spritesheet'
-  | 'gif';
+  | 'gif'
+  | 'video_anim'
+  | 'matting';
 
 const TABS: { key: TabKey; icon: LucideIcon }[] = [
   { key: 'compress', icon: ImageDown },
@@ -34,11 +38,13 @@ const TABS: { key: TabKey; icon: LucideIcon }[] = [
   { key: 'rename', icon: TextCursorInput },
   { key: 'watermark', icon: Stamp },
   { key: 'ai_rename', icon: Wand2 },
+  { key: 'matting', icon: Scissors },
   { key: 'trim', icon: Crop },
   { key: 'inspect', icon: ScanSearch },
   { key: 'normalize', icon: Ruler },
   { key: 'spritesheet', icon: LayoutGrid },
   { key: 'gif', icon: Film },
+  { key: 'video_anim', icon: Clapperboard },
 ];
 
 export const TAB_I18N: Record<TabKey, string> = {
@@ -48,11 +54,13 @@ export const TAB_I18N: Record<TabKey, string> = {
   rename: 'tab_rename',
   watermark: 'tab_watermark',
   ai_rename: 'tab_airename',
+  matting: 'tab_matting',
   trim: 'tab_trim',
   inspect: 'tab_inspect',
   normalize: 'tab_normalize',
   spritesheet: 'tab_spritesheet',
   gif: 'tab_gif',
+  video_anim: 'tab_video_anim',
 };
 
 interface ToolSidebarProps {

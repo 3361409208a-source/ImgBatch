@@ -33,7 +33,7 @@ export function WatermarkPage() {
   const pickImage = async () => {
     try {
       const { invoke } = await import('@tauri-apps/api/core');
-      const files = await invoke<string[]>('pick_files');
+      const files = await invoke<string[]>('pick_files', { kind: 'image' });
       if (files?.[0]) setImagePath(files[0]);
     } catch {
       const path = prompt('Watermark image path:');

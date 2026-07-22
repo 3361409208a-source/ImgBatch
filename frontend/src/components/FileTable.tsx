@@ -4,7 +4,8 @@ import { useAppStore } from '../store/appStore';
 
 export function FileTable() {
   const { t } = useTranslation();
-  const { filteredFiles, selectedFile, selectFile, folder } = useAppStore();
+  const { filteredFiles, selectedFile, selectFile, folder, scanKind } = useAppStore();
+  const isDoc = scanKind === 'document';
 
   const openFile = async (path: string) => {
     try {
@@ -63,13 +64,20 @@ export function FileTable() {
           {filteredFiles.length === 0 && (
             <tr>
               <td colSpan={4} className="px-3 py-16">
-                <div className="flex flex-col items-center gap-3 text-[color:var(--color-muted-fg)]">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted">
-                    <FolderOpen size={22} strokeWidth={1.5} className="opacity-60" />
-                  </div>
-                  <p className="text-sm">{t('select_folder_first')}</p>
+                <div className="flex flex-col items-center gap-2 font-mono select-none text-center">
+                  <span className="text-xl tracking-widest text-primary/80 font-bold animate-pulse">
+                    ( ° ▽ °;)
+                  </span>
+                  <span className="text-[11px] font-mono tracking-wider text-muted-foreground border border-border/80 px-3 py-1 rounded-md bg-muted/40 shadow-xs">
+                    [ NO FILES FOUND IN TARGET ]
+                  </span>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    (っ˘з(˘⌣˘ ) {t('select_folder_first')}
+                  </p>
                   {!folder && (
-                    <p className="text-xs opacity-70">点击「浏览」选择图片文件夹</p>
+                    <p className="text-[11px] text-muted-foreground/70 font-mono">
+                      {isDoc ? t('browse_doc_hint') : t('browse_image_hint')}
+                    </p>
                   )}
                 </div>
               </td>

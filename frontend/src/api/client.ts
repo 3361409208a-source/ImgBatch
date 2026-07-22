@@ -62,6 +62,30 @@ export async function getApiBase(force = false): Promise<string> {
   throw new Error(`API sidecar not ready: ${lastErr}`);
 }
 
+async function readApiError(res: Response): Promise<string> {
+  const text = await res.text();
+  if (!text) return `HTTP ${res.status}`;
+  try {
+    const parsed = JSON.parse(text) as { detail?: unknown };
+    const detail = parsed.detail;
+    if (typeof detail === 'string') return detail;
+    if (Array.isArray(detail)) {
+      return detail
+        .map((item) => {
+          if (typeof item === 'string') return item;
+          if (item && typeof item === 'object' && 'msg' in item) {
+            return String((item as { msg: unknown }).msg);
+          }
+          return JSON.stringify(item);
+        })
+        .join('\n');
+    }
+  } catch {
+    /* not JSON */
+  }
+  return text;
+}
+
 async function request<T>(
   method: string,
   path: string,
@@ -91,7 +115,7 @@ async function request<T>(
       resetApiBaseCache();
       return request<T>(method, path, body, true);
     }
-    throw new Error(await res.text());
+    throw new Error(await readApiError(res));
   }
   return res.json();
 }

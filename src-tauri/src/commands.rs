@@ -27,15 +27,50 @@ pub fn pick_folder(app: tauri::AppHandle) -> Result<Option<String>, String> {
 }
 
 #[tauri::command]
-pub fn pick_files(app: tauri::AppHandle) -> Result<Vec<String>, String> {
-    let paths = app
-        .dialog()
-        .file()
-        .add_filter(
-            "Images",
-            &["png", "jpg", "jpeg", "webp", "bmp", "gif", "tiff", "ico"],
-        )
-        .blocking_pick_files();
+pub fn pick_files(
+    app: tauri::AppHandle,
+    kind: Option<String>,
+) -> Result<Vec<String>, String> {
+    let kind = kind.unwrap_or_else(|| "image".to_string()).to_lowercase();
+    let mut dialog = app.dialog().file();
+    match kind.as_str() {
+        "document" => {
+            dialog = dialog.add_filter(
+                "Documents",
+                &[
+                    "pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx", "odt", "ods", "odp",
+                    "rtf", "txt", "md", "markdown", "html", "htm", "csv",
+                ],
+            );
+        }
+        "all" => {
+            dialog = dialog
+                .add_filter(
+                    "Images",
+                    &[
+                        "png", "jpg", "jpeg", "webp", "bmp", "gif", "tiff", "ico", "webm", "avif",
+                        "heic",
+                    ],
+                )
+                .add_filter(
+                    "Documents",
+                    &[
+                        "pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx", "odt", "ods", "odp",
+                        "rtf", "txt", "md", "markdown", "html", "htm", "csv",
+                    ],
+                );
+        }
+        _ => {
+            dialog = dialog.add_filter(
+                "Images",
+                &[
+                    "png", "jpg", "jpeg", "webp", "bmp", "gif", "tiff", "ico", "webm", "avif",
+                    "heic",
+                ],
+            );
+        }
+    }
+    let paths = dialog.blocking_pick_files();
     Ok(paths
         .unwrap_or_default()
         .into_iter()

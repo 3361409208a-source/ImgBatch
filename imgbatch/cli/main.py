@@ -151,6 +151,41 @@ def cmd_convert(args):
     return 0
 
 
+def cmd_video_anim(args):
+    from ..core.video_anim import run_video_anim_batch, VIDEO_EXT
+
+    folder = os.path.abspath(args.folder)
+    files = scan_folder(folder, recursive=args.recursive)
+    file_list = [f['name'] for f in files if os.path.splitext(f['name'])[1].lower() in VIDEO_EXT]
+    if not file_list:
+        print('No video files found.')
+        return 1
+
+    print(f'Found {len(file_list)} videos in {folder}')
+    state = CLITaskState()
+    result = run_video_anim_batch(
+        state, folder, file_list,
+        target=args.to,
+        max_edge=args.max_edge,
+        fps=args.fps,
+        quality=args.quality,
+        colors=args.colors,
+        keep_alpha=not args.no_alpha,
+        clean_fringe=args.clean_fringe,
+        white_key=args.white_key,
+        white_key_similarity=args.white_key_similarity,
+        white_key_blend=args.white_key_blend,
+        do_backup=args.backup,
+        replace=not args.output,
+        out=args.output,
+        on_progress=_on_progress_cli(state),
+    )
+    _print_result(result, 'video_anim')
+    if result.get('skipped'):
+        print(f"Skipped {len(result['skipped'])} non-video files.")
+    return 0
+
+
 def cmd_rename(args):
     folder = os.path.abspath(args.folder)
     files = scan_folder(folder, recursive=args.recursive)
@@ -456,6 +491,33 @@ def build_parser() -> argparse.ArgumentParser:
     add_folder(p)
     p.add_argument('--to', required=True, help='Target format (e.g. .png, .webp)')
     p.set_defaults(func=cmd_convert)
+
+    # video-anim
+    p = subparsers.add_parser(
+        'video-anim',
+        help='Convert video (WebM/MP4/…) to animated WebP or GIF',
+    )
+    add_folder(p)
+    p.add_argument('--to', default='.webp', choices=['.webp', '.gif', 'webp', 'gif'],
+                   help='Output format (default: .webp)')
+    p.add_argument('--max-edge', type=int, default=0,
+                   help='Max edge length in px, 0=original (default: 0)')
+    p.add_argument('--fps', type=int, default=24, help='Output FPS (default: 24)')
+    p.add_argument('--quality', type=int, default=80,
+                   help='WebP quality 1-100 (default: 80)')
+    p.add_argument('--colors', type=int, default=256,
+                   help='GIF palette colors 2-256 (default: 256)')
+    p.add_argument('--no-alpha', action='store_true',
+                   help='Drop alpha channel')
+    p.add_argument('--clean-fringe', action='store_true',
+                   help='Clean dark matte fringe (slower, per-frame)')
+    p.add_argument('--white-key', action='store_true',
+                   help='Remove solid white background (transparent output)')
+    p.add_argument('--white-key-similarity', type=float, default=0.12,
+                   help='White key similarity 0.05-0.3 (default: 0.12)')
+    p.add_argument('--white-key-blend', type=float, default=0.04,
+                   help='White key edge blend 0.01-0.1 (default: 0.04)')
+    p.set_defaults(func=cmd_video_anim)
 
     # rename
     p = subparsers.add_parser('rename', help='Batch rename images')

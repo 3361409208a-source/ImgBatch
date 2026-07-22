@@ -3,7 +3,6 @@ import { useTranslation } from 'react-i18next';
 import { Play } from 'lucide-react';
 import { useAppStore } from '../store/appStore';
 import { OutputOptions } from '../components/OutputOptions';
-import { ExtensionPackPanel } from '../components/ExtensionPackPanel';
 import { ToolPanel } from '../components/ToolPanel';
 import { api } from '../api/client';
 import type { DocCatalog } from '../utils/docFormats';
@@ -52,8 +51,6 @@ export function DocConvertPage() {
 
   return (
     <ToolPanel>
-      <ExtensionPackPanel onUnlocked={reloadCatalog} />
-
       <p className="text-xs text-muted-foreground">{t('doc_convert_hint')}</p>
 
       <div className="flex flex-col gap-2">

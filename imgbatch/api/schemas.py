@@ -103,7 +103,7 @@ class AiRenameParseResponse(BaseModel):
 TaskType = Literal[
     "compress", "convert", "doc_convert", "rename", "watermark",
     "ai_rename", "ai_apply", "trim", "inspect",
-    "normalize", "spritesheet", "gif_edit",
+    "normalize", "spritesheet", "gif_edit", "matting", "video_anim",
 ]
 
 
@@ -144,7 +144,9 @@ class PreviewRequest(BaseModel):
 
 
 class PreviewResponse(BaseModel):
-    data_url: str = Field(..., description='data:image/png;base64,...')
+    data_url: str = Field(default='', description='data:image/png;base64,...')
+    kind: Literal["image", "text", "none"] = "none"
+    text: str = ""
 
 
 # ── GIF info ──────────────────────────────────────────────────────────────

@@ -6,10 +6,11 @@ import { useAppStore } from '../store/appStore';
 
 interface BackupManagerProps {
   open: boolean;
-  onClose: () => void;
+  onClose?: () => void;
+  inline?: boolean;
 }
 
-export function BackupManager({ open, onClose }: BackupManagerProps) {
+export function BackupManager({ open, onClose, inline = false }: BackupManagerProps) {
   const { t } = useTranslation();
   const { folder, refreshFiles, setStatusMessage } = useAppStore();
   const [backups, setBackups] = useState<string[]>([]);
@@ -56,7 +57,7 @@ export function BackupManager({ open, onClose }: BackupManagerProps) {
       const res = await api.restoreBackup(selected[0], folder);
       setStatusMessage(`Restored ${res.restored} files`);
       await refreshFiles();
-      onClose();
+      onClose?.();
     } catch (e) {
       setError(String(e));
     }
@@ -75,18 +76,19 @@ export function BackupManager({ open, onClose }: BackupManagerProps) {
     }
   };
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-[2px]">
-      <div className="w-full max-w-lg bg-surface border border-border rounded-lg shadow-xl p-4 flex flex-col gap-3">
-        <div className="flex items-center justify-between">
-          <h2 className="text-sm font-semibold tracking-tight flex items-center gap-2">
-            <Archive size={15} strokeWidth={1.5} className="text-primary" />
-            {t('backup_mgr')}
-          </h2>
+  const content = (
+    <div className={`w-full ${inline ? '' : 'max-w-lg'} bg-surface border border-border rounded-lg shadow-sm p-4 flex flex-col gap-3`}>
+      <div className="flex items-center justify-between">
+        <h2 className="text-sm font-semibold tracking-tight flex items-center gap-2">
+          <Archive size={15} strokeWidth={1.5} className="text-primary" />
+          {t('backup_mgr')}
+        </h2>
+        {!inline && onClose && (
           <button type="button" onClick={onClose} className="btn-ghost h-7 w-7 p-0">
             <X size={15} strokeWidth={1.5} />
           </button>
-        </div>
+        )}
+      </div>
         {!folder && <p className="text-[13px] text-[color:var(--color-muted-fg)]">{t('select_folder_first')}</p>}
         {loading && <p className="text-xs text-[color:var(--color-muted-fg)]">Loading...</p>}
         {error && <p className="text-xs text-destructive">{error}</p>}
@@ -129,6 +131,13 @@ export function BackupManager({ open, onClose }: BackupManagerProps) {
           </button>
         </div>
       </div>
+  );
+
+  if (inline) return content;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-[2px]">
+      {content}
     </div>
   );
 }

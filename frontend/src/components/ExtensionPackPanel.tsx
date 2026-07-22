@@ -58,20 +58,28 @@ export function ExtensionPackPanel({ onUnlocked, compact = false }: ExtensionPac
     }
   }, [onUnlocked]);
 
+  const checkStatusOnce = useCallback(async () => {
+    try {
+      const st = await api.extensionInstallStatus();
+      setInstallStatus(st);
+      if (!st.running) {
+        stopPoll();
+        setBusy(false);
+        await refresh();
+        if (st.error) alert(st.error);
+      }
+    } catch {
+      /* ignore */
+    }
+  }, [refresh]);
+
   const pollInstall = useCallback(() => {
     stopPoll();
+    void checkStatusOnce();
     pollRef.current = window.setInterval(() => {
-      void api.extensionInstallStatus().then(async (st) => {
-        setInstallStatus(st);
-        if (!st.running) {
-          stopPoll();
-          setBusy(false);
-          await refresh();
-          if (st.error) alert(st.error);
-        }
-      });
-    }, 800);
-  }, [refresh]);
+      void checkStatusOnce();
+    }, 600);
+  }, [checkStatusOnce]);
 
   useEffect(() => {
     void refresh();
@@ -80,9 +88,17 @@ export function ExtensionPackPanel({ onUnlocked, compact = false }: ExtensionPac
 
   const oneClickInstall = async (extId: string) => {
     setBusy(true);
+    setInstallStatus({
+      running: true,
+      progress: 5,
+      message: t('ext_installing'),
+      error: null,
+      install_path: null,
+    });
     try {
       const res = await api.installExtension(extId);
       if (res.already_installed) {
+        setBusy(false);
         await refresh();
         return;
       }
@@ -90,16 +106,17 @@ export function ExtensionPackPanel({ onUnlocked, compact = false }: ExtensionPac
     } catch (e) {
       alert(String(e));
       setBusy(false);
+      setInstallStatus(null);
     }
   };
 
-  const pickLibreOffice = async () => {
+  const pickExtensionPath = async (extId: string) => {
     setBusy(true);
     try {
       const { invoke } = await import('@tauri-apps/api/core');
       const path = await invoke<string | null>('pick_executable');
       if (!path) return;
-      await api.setExtensionPath('libreoffice', path);
+      await api.setExtensionPath(extId, path);
       await refresh();
     } catch (e) {
       alert(String(e));
@@ -209,7 +226,7 @@ export function ExtensionPackPanel({ onUnlocked, compact = false }: ExtensionPac
                   </button>
                   <button
                     type="button"
-                    onClick={() => void pickLibreOffice()}
+                    onClick={() => void pickExtensionPath(item.id)}
                     disabled={installing}
                     className="btn-ghost h-7 text-xs px-2"
                     title={t('ext_manual_path')}

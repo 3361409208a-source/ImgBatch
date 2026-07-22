@@ -69,6 +69,24 @@ def test_extensions(client):
     lo = next(x for x in data["extensions"] if x["id"] == "libreoffice")
     assert lo["download_url"]
     assert lo["unlocks"]
+    ff = next(x for x in data["extensions"] if x["id"] == "ffmpeg")
+    assert ff["download_url"]
+
+
+def test_install_ffmpeg_extension(client, monkeypatch):
+    monkeypatch.setattr(
+        "imgbatch.core.extensions.is_ffmpeg_installed",
+        lambda: True,
+    )
+    monkeypatch.setattr(
+        "imgbatch.core.extensions.find_ffmpeg_extension",
+        lambda: r"C:\ffmpeg\bin\ffmpeg.exe",
+    )
+    resp = client.post("/extensions/ffmpeg/install")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["already_installed"] is True
+    assert data["started"] is False
 
 
 # ── Scan ──────────────────────────────────────────────────────────────────
@@ -303,6 +321,18 @@ def test_preview_thumb(client, tmp_image_dir):
     assert resp.status_code == 200
     data = resp.json()
     assert data["data_url"].startswith("data:image/png;base64,")
+    assert data["kind"] == "image"
+
+
+def test_preview_thumb_markdown(client, tmp_path):
+    md = tmp_path / "sample.md"
+    md.write_text("# Title\n\nBody text", encoding="utf-8")
+
+    resp = client.post("/preview/thumb", json={"path": str(md), "max_size": 200})
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["kind"] == "text"
+    assert "Title" in data["text"]
 
 
 # ── Undo status ───────────────────────────────────────────────────────────

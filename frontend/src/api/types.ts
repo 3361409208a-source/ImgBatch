@@ -56,6 +56,8 @@ export interface TaskStatus {
 
 export interface PreviewResponse {
   data_url: string;
+  kind?: 'image' | 'text' | 'none';
+  text?: string;
 }
 
 export interface UndoResponse {

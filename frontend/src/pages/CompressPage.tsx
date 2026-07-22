@@ -4,6 +4,7 @@ import { Play } from 'lucide-react';
 import { useAppStore } from '../store/appStore';
 import { OutputOptions } from '../components/OutputOptions';
 import { ToolPanel } from '../components/ToolPanel';
+import { FfmpegInstallBar } from '../components/FfmpegInstallBar';
 import { api } from '../api/client';
 
 type CompressMode = 'normal' | 'balanced' | 'webm';
@@ -138,6 +139,7 @@ export function CompressPage() {
         </div>
       ) : mode === 'webm' ? (
         <div className="flex flex-col gap-3">
+          <FfmpegInstallBar />
           <div className="flex flex-wrap items-end gap-6">
             <label className="flex flex-col gap-1.5 w-28">
               <span className="label-muted">{t('webm_max_edge')}</span>

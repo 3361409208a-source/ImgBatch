@@ -15,13 +15,16 @@ import { DocConvertPage } from './pages/DocConvertPage';
 import { RenamePage } from './pages/RenamePage';
 import { WatermarkPage } from './pages/WatermarkPage';
 import { AiRenamePage } from './pages/AiRenamePage';
+import { MattingPage } from './pages/MattingPage';
 import { TrimPage } from './pages/TrimPage';
 import { InspectPage } from './pages/InspectPage';
 import { NormalizePage } from './pages/NormalizePage';
 import { SpritesheetPage } from './pages/SpritesheetPage';
 import { GifPage } from './pages/GifPage';
+import { VideoAnimPage } from './pages/VideoAnimPage';
 import { api } from './api/client';
 import { ResizeHandle } from './components/ResizeHandle';
+import { SplashScreen } from './components/SplashScreen';
 
 const LEFT_KEY = 'imgbatch.layout.leftWidth';
 const RIGHT_KEY = 'imgbatch.layout.rightWidth';
@@ -129,6 +132,8 @@ export default function App() {
         return <WatermarkPage />;
       case 'ai_rename':
         return <AiRenamePage />;
+      case 'matting':
+        return <MattingPage />;
       case 'trim':
         return <TrimPage />;
       case 'inspect':
@@ -139,11 +144,14 @@ export default function App() {
         return <SpritesheetPage />;
       case 'gif':
         return <GifPage />;
+      case 'video_anim':
+        return <VideoAnimPage />;
     }
   };
 
   return (
-    <div className="flex flex-col h-screen text-foreground">
+    <div className="flex flex-col h-screen text-foreground relative">
+      <SplashScreen />
       <FolderBar />
       <div className="flex flex-1 min-h-0 overflow-hidden">
         <ToolSidebar activeTab={activeTab} onTabChange={setActiveTab} width={leftWidth} />

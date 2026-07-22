@@ -12,12 +12,42 @@ from typing import Callable, List, Optional
 
 from .common import ensure_parent_dir
 from ..infra.logger import get_logger
+from ..infra.settings import CONFIG_DIR
 
 WEBM_EXT = {'.webm'}
+FFMPEG_EXT_DIR = CONFIG_DIR / 'extensions' / 'ffmpeg'
+
+
+def _find_ffmpeg_under(root: Path) -> Optional[str]:
+    if not root.is_dir():
+        return None
+    for name in ('ffmpeg.exe', 'ffmpeg'):
+        for candidate in (root / 'bin' / name, root / name):
+            if candidate.is_file():
+                return str(candidate)
+    for path in root.rglob('ffmpeg.exe'):
+        if path.is_file():
+            return str(path)
+    for path in root.rglob('ffmpeg'):
+        if path.is_file() and os.access(path, os.X_OK):
+            return str(path)
+    return None
 
 
 def find_ffmpeg() -> Optional[str]:
-    """Locate ffmpeg binary on PATH or common Windows install paths."""
+    """Locate ffmpeg: config → managed extension → PATH → common installs."""
+    try:
+        from ..infra.settings import load_config
+        custom = (load_config().get('ffmpeg_path') or '').strip().strip('"')
+        if custom and os.path.isfile(custom):
+            return custom
+    except Exception:
+        pass
+
+    managed = _find_ffmpeg_under(FFMPEG_EXT_DIR)
+    if managed:
+        return managed
+
     path = shutil.which('ffmpeg')
     if path:
         return path
